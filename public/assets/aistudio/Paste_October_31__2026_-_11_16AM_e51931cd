@@ -1,0 +1,2105 @@
+# DROVA EXPRESS — COMPLETE INTERNAL MERCHANT INTELLIGENCE, COMMERCIAL CRM & EXPÉDITEUR MANAGEMENT PLATFORM
+
+## 0. PROJECT MISSION
+
+Build a complete production-ready internal company platform for **DROVA Express Algeria**.
+
+This is NOT a public portal and NOT a simple CRM.
+
+The application must become the internal operational system connecting:
+
+**Discovery → Enrichment → Verification → Deduplication → Qualification → Commercial Assignment → Calls → Follow-ups → Interested → Confirmed → Onboarding → Expéditeur → Active → Inactive → Reactivation**
+
+The system must manage real merchant intelligence, Commercial activity, Expéditeur lifecycle and management analytics in one centralized platform.
+
+Do not create fake merchants, fake phone numbers, fake companies, fake calls, fake performance or fake discovery results.
+
+If a feature is not technically implemented yet, implement it. Do not leave core features as `PLANNED`.
+
+---
+
+# 1. BRAND IDENTITY
+
+Use DROVA Express visual identity:
+
+- Black: `#0C0C0C`
+- White: `#FFFFFF`
+- Red: `#FF0000`
+- Dark Gray: `#262626`
+
+Typography:
+
+- Arabic: Cairo
+- Latin: Montserrat
+
+Design requirements:
+
+- Premium
+- Professional
+- Operational
+- Fast
+- Clean
+- Responsive
+- Desktop-first for office use
+- Mobile-friendly where useful
+- Arabic RTL
+- French/English LTR
+
+Application title:
+
+**DROVA EXPRESS — Merchant Intelligence & Commercial CRM**
+
+Developer credit inside:
+
+**Developed by Cherouik Imad**
+
+Place this under:
+
+**Settings → About**
+
+---
+
+# 2. INTERNAL COMPANY MODE
+
+This application is for internal DROVA Express employees.
+
+There is no public merchant portal in this phase.
+
+All users must authenticate.
+
+Login:
+
+```text
+Username
+Password
+```
+
+After login, redirect the user according to role.
+
+---
+
+# 3. AUTHENTICATION & USER MANAGEMENT
+
+Implement real authentication with persistent database-backed users.
+
+Do NOT hardcode users in frontend code.
+
+## SUPER ADMIN
+
+Create an initial Super Admin account during deployment/setup.
+
+The Super Admin has complete access.
+
+Admin must be able to:
+
+- Create users
+- Edit users
+- Disable users
+- Reactivate users
+- Delete users safely
+- Reset passwords
+- Change passwords
+- Change roles
+- Assign Commercial users
+- View user activity
+- View user performance
+- View login history
+- Manage permissions
+
+---
+
+# 4. CREATE USER
+
+Create:
+
+**Settings → Team → Users → Create User**
+
+Fields:
+
+```text
+Full Name
+Username
+Initial Password
+Role
+Phone (optional)
+Email (optional)
+Status
+```
+
+Example only:
+
+```text
+Full Name: Mourad Karmoula
+Username: mouradkarmoula
+Password: mourad123@
+Role: COMMERCIAL
+Status: Active
+```
+
+This is only an example.
+
+Do NOT hardcode this account or password.
+
+The Admin chooses the username and initial password whenever creating a new employee account.
+
+The system must store only a secure password hash.
+
+Never store plaintext passwords.
+
+Use:
+
+**Argon2id**
+
+or an equivalent secure password hashing algorithm.
+
+---
+
+# 5. ROLES
+
+Implement:
+
+```text
+SUPER_ADMIN
+ADMIN_MARKETING
+COMMERCIAL_MANAGER
+COMMERCIAL
+VIEWER
+```
+
+## SUPER_ADMIN
+
+Full access to everything.
+
+## ADMIN_MARKETING
+
+Access to:
+
+- Dashboard
+- Discovery
+- Campaigns
+- Sources
+- Connectors
+- Raw Candidates
+- Prospects
+- Verification
+- Deduplication
+- Scoring
+- Excel Imports
+- Expéditeurs
+- Commercial Assignments
+- Analytics
+- Wilaya Intelligence
+
+No ability to escalate privileges beyond authorized permissions.
+
+## COMMERCIAL_MANAGER
+
+Access to:
+
+- Commercial Dashboard
+- Commercial team
+- Prospects
+- Expéditeurs
+- Calls
+- Follow-ups
+- Assignments
+- Performance
+- Team analytics
+
+## COMMERCIAL
+
+Only see:
+
+- Accueil
+- Mes Prospects
+- Mes Expéditeurs
+- Appels
+- Suivis
+- Profil
+
+A Commercial must only see records assigned to them unless explicitly authorized.
+
+They must NOT access:
+
+- Discovery connectors
+- API keys
+- Source credentials
+- Raw candidates
+- Marketing campaigns
+- Global database administration
+- User management
+- Other Commercial private records
+- Audit administration
+
+## VIEWER
+
+Read-only access according to assigned permissions.
+
+---
+
+# 6. SERVER-SIDE SECURITY
+
+Frontend hiding is NOT enough.
+
+All permissions must be enforced by the backend.
+
+Example:
+
+```text
+GET /prospects
+```
+
+SUPER_ADMIN:
+→ all authorized prospects
+
+ADMIN_MARKETING:
+→ marketing database
+
+COMMERCIAL_MANAGER:
+→ team prospects
+
+COMMERCIAL:
+→ only assigned prospects
+
+Never trust frontend role checks.
+
+---
+
+# 7. COMMERCIAL ACCOUNT MANAGEMENT
+
+Admin interface:
+
+**Settings → Team → Commercial**
+
+Display:
+
+```text
+Name
+Username
+Role
+Status
+Assigned Prospects
+Calls
+Confirmed Calls
+Interested
+Activated
+Last Login
+```
+
+Actions:
+
+- Edit
+- Disable
+- Enable
+- Reset Password
+- Change Role
+- View Performance
+
+Use:
+
+```text
+user.id
+```
+
+as the stable database identity.
+
+Never use display name as identity.
+
+---
+
+# 8. MAIN APPLICATION MODULES
+
+Implement:
+
+```text
+Dashboard
+Marketing Intelligence
+Discovery Campaigns
+Prospects
+Verification
+Deduplication
+Commercial CRM
+Calls
+Follow-ups
+Expéditeurs
+Team
+Wilaya Intelligence
+Analytics
+Imports / Exports
+Sources
+Connectors
+Notifications
+Audit Log
+Settings
+Compliance
+```
+
+---
+
+# 9. DISCOVERY ENGINE
+
+Build a real discovery infrastructure.
+
+The system must discover real merchants from configured public/authorized sources.
+
+Target:
+
+**10,000+ unique real merchants nationally**
+
+This is a target, NOT permission to fabricate records.
+
+If fewer than 10,000 real merchants have been discovered, continue improving and running discovery from configured sources.
+
+Never generate fake records just to reach 10,000.
+
+Dashboard must always show actual database values.
+
+---
+
+# 10. DISCOVERY SOURCES
+
+Support architecture for:
+
+### Business Discovery
+
+- Google Maps / Google Business
+- Public business directories
+- Pages Jaunes Algeria
+- AnnuairesDZ
+- Kompass Algeria
+- El Mouchir / CACI
+- CNRC / Sidjilcom where authorized
+- Public company websites
+
+### E-commerce
+
+- Ouedkniss
+- Public e-commerce websites
+- Public online stores
+- Public marketplace listings
+- Public product pages
+
+### Social Commerce
+
+- Facebook public business pages
+- Public Marketplace/business content where permitted
+- Instagram public business profiles
+- TikTok public business profiles
+- Public advertisements
+- Meta Ads Library
+
+### Web Discovery
+
+Use multilingual discovery combinations:
+
+```text
+product + Wilaya
+product + commune
+livraison + product
+commander + product
+WhatsApp + product
+boutique + Wilaya
+vente en ligne + Wilaya
+livraison 58 wilayas
+shop + Wilaya
+```
+
+### Reverse Discovery
+
+Discover merchants through:
+
+- Related pages
+- Linked websites
+- Public directories
+- Related advertisers
+- Public business networks
+
+Every merchant discovered through reverse discovery must still be independently verified.
+
+---
+
+# 11. SOURCE REGISTRY
+
+Create:
+
+**Settings → Sources & Connectors**
+
+Each connector must contain:
+
+```text
+id
+name
+type
+status
+enabled
+configured
+capabilities
+configuration
+last_run
+last_success
+last_error
+```
+
+Statuses:
+
+```text
+AVAILABLE
+NOT_CONFIGURED
+DISABLED
+ERROR
+RUNNING
+READY
+```
+
+Executable only when:
+
+```text
+enabled = true
+configured = true
+status = READY
+```
+
+Connector contract:
+
+```text
+validateConfiguration()
+testConnection()
+discover()
+normalize()
+validateCandidate()
+returnCandidates()
+```
+
+Campaigns must store connector IDs.
+
+---
+
+# 12. DEVELOPMENT TEST CONNECTOR
+
+Provide a development-only Test Connector.
+
+It may generate synthetic test records ONLY in development.
+
+It must never appear in production.
+
+Production database:
+
+**REAL RECORDS ONLY.**
+
+---
+
+# 13. DISCOVERY JOBS
+
+Implement:
+
+```text
+QUEUED
+RUNNING
+COMPLETED
+PARTIAL
+FAILED
+BLOCKED
+```
+
+Every campaign must show:
+
+- source
+- start time
+- end time
+- candidates found
+- unique merchants
+- verified
+- contactable
+- errors
+
+---
+
+# 14. DISCOVERY CAMPAIGNS
+
+Create:
+
+**Marketing → Discovery Campaigns → New Campaign**
+
+Fields:
+
+```text
+Campaign name
+Wilaya
+Commune
+Target quantity
+Categories
+Keywords
+Sources
+Phone required
+Minimum score
+```
+
+Multiple sources can be selected.
+
+Before execution:
+
+**Campaign Preflight**
+
+Validate:
+
+- source selected
+- connector exists
+- connector configured
+- connector ready
+- required configuration present
+
+If no connector:
+
+```text
+NO_CONFIGURED_CONNECTOR
+```
+
+Show a useful diagnostic message.
+
+Never silently fail.
+
+---
+
+# 15. MERCHANT DATA RULES
+
+Never fabricate:
+
+- merchant name
+- phone
+- WhatsApp
+- email
+- address
+- Facebook
+- Instagram
+- website
+- activity
+- current courier
+- parcel volume
+
+Phone is mandatory for final contactable prospect.
+
+Accepted public phone sources:
+
+- Facebook
+- Instagram
+- TikTok
+- Official website
+- Google Business / Maps
+- Marketplace
+- Directories
+- E-commerce sites
+- Public posts/images
+
+Do not consider these as phone numbers:
+
+- Facebook URL
+- Instagram username
+- Messenger
+- Telegram
+- email-only
+- website-only
+- contact form
+- WhatsApp link without visible number
+- incomplete number
+
+Normalize phone numbers to:
+
+```text
++213...
+```
+
+---
+
+# 16. VERIFICATION
+
+Every prospect should be verified using multiple sources where possible.
+
+Verification states:
+
+```text
+Missing
+Found
+Verified
+Invalid
+Conflicting
+Unknown
+```
+
+Verify:
+
+- merchant identity
+- phone
+- Wilaya
+- Commune
+- activity
+- product
+- online activity
+- shipping activity
+
+If two sources conflict:
+
+```text
+CONFLICT DETECTED
+```
+
+Show both pieces of evidence.
+
+---
+
+# 17. EVIDENCE SYSTEM
+
+Every important data point should support evidence.
+
+Example:
+
+```text
+Phone
++213...
+Source: Facebook
+Verified: YES
+
+Wilaya
+Laghouat
+Source: Google Business
+Verified: YES
+
+Current Courier
+Yalidine
+Source: Instagram public post
+Verified: YES
+```
+
+Evidence should include:
+
+```text
+source
+URL
+date observed
+field
+value
+verification state
+```
+
+Do not fabricate evidence.
+
+---
+
+# 18. MERCHANT 360 PROFILE
+
+Every merchant needs a complete 360° profile.
+
+Sections:
+
+```text
+Identity
+Business
+Contact
+Location
+Products
+Socials
+Website
+Sources
+Evidence
+Lead Score
+Shipping Potential
+Current Courier
+
+Commercial
+Assigned Commercial
+Calls
+Follow-ups
+Status
+
+Expéditeur
+Onboarding
+Activation
+Lifecycle
+
+History
+Audit
+```
+
+Everything important should be accessible from one profile.
+
+---
+
+# 19. MASTER PROSPECT TABLE
+
+Use:
+
+```text
+#
+الاسم / الصفحة
+نوع التاجر
+المنتج
+الولاية
+البلدية
+الهاتف
+واتساب؟
+الإيميل
+رابط الصفحة
+المصدر
+شركة التوصيل الحالية
+مستوى الولاء
+colis/يوم (تقدير)
+الحالة
+تاريخ التواصل
+المتابعة القادمة
+المسؤول
+ملاحظات
+تنبيه
+```
+
+Parcel volume must use only ranges:
+
+```text
+1–5
+5–10
+10–20
+20–50
+50+
+```
+
+Never invent exact volumes.
+
+---
+
+# 20. DEDUPLICATION
+
+Detect duplicates using:
+
+```text
+Phone
+WhatsApp
+Facebook URL
+Instagram URL
+Website
+Name + Commune
+Name + Wilaya + Commune
+```
+
+Possible duplicate example:
+
+```text
+87% similarity
+```
+
+Admin actions:
+
+```text
+Merge
+Keep Separate
+Reject
+```
+
+When merging, preserve:
+
+- Calls
+- Follow-ups
+- Assignments
+- Evidence
+- Status history
+- Audit history
+
+Never destroy historical information.
+
+---
+
+# 21. DROVA SCORE
+
+Implement an explainable score from 0–100.
+
+Example factors:
+
+```text
+E-commerce activity       +20
+Verified phone             +15
+WhatsApp                   +10
+Active social              +10
+Ships outside Wilaya      +15
+Active advertisements     +10
+High shipping potential   +15
+Recent activity            +5
+```
+
+Grades:
+
+```text
+90–100 = A+
+75–89  = A
+55–74  = B
+<55    = C
+```
+
+Score must be explainable.
+
+Example:
+
+```text
+Score: 87
+
++15 Verified phone
++20 E-commerce
++10 WhatsApp
++15 Ships nationwide
++10 Active Ads
++10 Active social
++7 Medium shipping potential
+```
+
+---
+
+# 22. COMMERCIAL HANDOFF
+
+Marketing/Admin:
+
+```text
+Discovery
+↓
+Verification
+↓
+Deduplication
+↓
+Qualification
+↓
+Ready for Call
+↓
+Assign Commercial
+```
+
+Commercial receives only the information needed to contact the merchant.
+
+Commercial cannot modify original verification evidence or discovery metadata.
+
+---
+
+# 23. COMMERCIAL WORKSPACE
+
+Commercial interface must be intentionally simple.
+
+Home:
+
+```text
+Calls today
+Follow-ups today
+Awaiting response
+Interested prospects
+Active Expéditeurs
+Expéditeurs to follow up
+```
+
+Primary CTA:
+
+**COMMENCER LES APPELS**
+
+---
+
+# 24. SMART CALL QUEUE
+
+Create:
+
+**Start Calling**
+
+The system automatically prioritizes:
+
+```text
+A+ high-potential prospects
+↓
+A verified prospects
+↓
+Existing Expéditeurs requiring reactivation
+↓
+New prospects
+↓
+Lower priority
+```
+
+Allow:
+
+**Top 20 calls today**
+
+Commercial should not waste time manually selecting leads.
+
+---
+
+# 25. CALL INTERFACE
+
+Show:
+
+```text
+Merchant name
+Business
+Activity
+Product
+Phone
+WhatsApp
+Wilaya
+Commune
+Current courier
+Lead Score
+Important notes
+```
+
+Buttons:
+
+```text
+Call
+Confirmed
+No Answer
+Busy
+Callback
+Wrong Number
+Unavailable
+Interested
+Not Interested
+Information Requested
+Do Not Contact
+```
+
+After call:
+
+```text
+Notes
+Next Follow-up
+Date
+Time
+```
+
+---
+
+# 26. CONFIRMED VS UNCONFIRMED CALLS
+
+This distinction is mandatory.
+
+A call is NOT automatically confirmed.
+
+### CONFIRMED
+
+When the Commercial actually reaches the correct person and establishes contact.
+
+### UNCONFIRMED
+
+Examples:
+
+- no answer
+- busy
+- phone unavailable
+- call failed
+- wrong number
+- callback not yet reached
+
+Store call outcomes separately.
+
+---
+
+# 27. COMMERCIAL PERFORMANCE
+
+Create:
+
+**Analytics → Commercial Performance**
+
+For every Commercial:
+
+```text
+Commercial
+Assigned prospects
+Total calls
+Calls today
+Calls this week
+Calls this month
+Confirmed contacts
+Unconfirmed contacts
+No answer
+Callbacks
+Interested
+Not interested
+Follow-ups due
+Follow-ups completed
+Confirmed Expéditeurs
+Activated Expéditeurs
+Active Expéditeurs
+Reactivated Expéditeurs
+```
+
+Calculate:
+
+```text
+Confirmation Rate
+Contact Rate
+Interest Rate
+Activation Rate
+Follow-up Completion Rate
+```
+
+Example:
+
+```text
+Mourad Karmoula
+
+Assigned: 250
+Calls: 85
+Confirmed: 47
+Unconfirmed: 38
+Interested: 9
+Activated: 12
+
+Confirmation Rate:
+47 / 85 = 55.3%
+```
+
+Do not manually enter these numbers.
+
+All metrics must come from actual call records.
+
+---
+
+# 28. PERFORMANCE FILTERS
+
+Admin/Manager can filter:
+
+```text
+Today
+Yesterday
+This Week
+This Month
+Custom Range
+```
+
+And by:
+
+```text
+Commercial
+Wilaya
+Campaign
+Source
+Status
+```
+
+Allow sorting by:
+
+```text
+Total calls
+Confirmed contacts
+Confirmation rate
+Interested
+Activated
+Active Expéditeurs
+```
+
+Do not rank Commercials only by number of calls.
+
+---
+
+# 29. COMMERCIAL ACTIVITY HISTORY
+
+Track:
+
+```text
+Logins
+Calls
+Call outcomes
+Follow-ups created
+Follow-ups completed
+Prospects assigned
+Prospects contacted
+Status changes
+Expéditeur updates
+```
+
+Historical performance records cannot be manually fabricated or edited.
+
+---
+
+# 30. FOLLOW-UP CENTER
+
+Every follow-up contains:
+
+```text
+Prospect
+Commercial
+Date
+Time
+Reason
+Priority
+Status
+Notes
+```
+
+Dashboard:
+
+```text
+Today
+Overdue
+Upcoming
+Completed
+```
+
+Notifications must alert Commercials about due follow-ups.
+
+---
+
+# 31. WHATSAPP
+
+If WhatsApp is verified:
+
+Show:
+
+**WhatsApp**
+
+If not verified, do not display it as confirmed.
+
+Track:
+
+```text
+WhatsApp verified
+WhatsApp contacted
+WhatsApp response
+```
+
+Do not perform unauthorized automated messaging.
+
+---
+
+# 32. EXPÉDITEUR MANAGEMENT
+
+Implement complete lifecycle:
+
+```text
+غير مؤهل
+Prospect
+مهتم
+قيد المتابعة
+مرشح قوي
+في طور التفعيل
+مؤكد
+مفعل
+نشط
+غير نشط
+متوقف
+إعادة التفعيل
+مغلق
+```
+
+Separate this from Commercial contact status.
+
+---
+
+# 33. EXPÉDITEUR IMPORT
+
+Create:
+
+**Expéditeurs → Import Excel**
+
+Support:
+
+```text
+.xlsx
+.xls
+.csv
+```
+
+Preview:
+
+```text
+Sheets
+Columns
+Rows
+Mapping
+Validation
+Duplicates
+```
+
+Recognize columns such as:
+
+```text
+Nom
+Expéditeur
+Téléphone
+WhatsApp
+Wilaya
+Commune
+Adresse
+Activité
+Produit
+Email
+Facebook
+Instagram
+Entreprise
+Statut
+```
+
+Duplicate detection:
+
+```text
+Phone
+Name + Phone
+Facebook URL
+Instagram URL
+Website
+Name + Wilaya + Commune
+```
+
+Classify:
+
+```text
+NEW
+EXISTING
+POSSIBLE_DUPLICATE
+INVALID
+```
+
+Never overwrite:
+
+- Calls
+- Follow-ups
+- Assignments
+- Status history
+- Onboarding history
+- Audit logs
+
+---
+
+# 34. EXPÉDITEUR COMMERCIAL QUEUE
+
+Commercial gets:
+
+**Mes Expéditeurs**
+
+And:
+
+**جاهز للمتابعة**
+
+Automatically include:
+
+- newly imported Expéditeurs
+- assigned Expéditeurs
+- follow-up due
+- inactive Expéditeurs
+- reactivation candidates
+- missing information
+- potentially inactive accounts
+
+---
+
+# 35. EXPÉDITEUR CONTACT STATUS
+
+Use:
+
+```text
+جديد
+جاهز للاتصال
+تم الاتصال
+لم يرد
+إعادة الاتصال
+نشط
+نشط - متابعة
+معلومات ناقصة
+مشكل
+متوقف مؤقتًا
+غير نشط
+يحتاج إعادة تفعيل
+تمت إعادة التفعيل
+غير مهتم
+مرفوض
+```
+
+Commercial can update contact status and create follow-ups.
+
+---
+
+# 36. REACTIVATION ENGINE
+
+Detect inactive Expéditeurs.
+
+Show:
+
+```text
+Inactive
+Days inactive
+Last activity
+Last contact
+Previous volume range
+Commercial
+Reactivation priority
+```
+
+Create a reactivation queue.
+
+---
+
+# 37. MERCHANT LIFECYCLE
+
+Implement:
+
+```text
+Discovered
+↓
+Verified
+↓
+Contactable
+↓
+Ready
+↓
+Contacted
+↓
+Interested
+↓
+Confirmed
+↓
+Onboarding
+↓
+Activated
+↓
+Active
+↓
+Inactive
+↓
+Reactivation
+↓
+Active
+```
+
+Management must be able to see where merchants are lost in the funnel.
+
+---
+
+# 38. REJECTION / NON-CONVERSION REASONS
+
+When a merchant does not convert, require a structured reason when appropriate:
+
+```text
+Too expensive
+Already using competitor
+Not interested
+Low shipping volume
+No online sales
+No response
+Wrong number
+Business closed
+Bad service experience
+Other
+```
+
+Analytics must show the most common reasons.
+
+---
+
+# 39. COMPETITOR INTELLIGENCE
+
+Track verified:
+
+```text
+Current courier
+Previous courier
+Reason for change
+Loyalty
+Competitor issues
+```
+
+Never guess the current courier.
+
+Only record verified or explicitly reported information.
+
+---
+
+# 40. MARKETING ↔ COMMERCIAL FEEDBACK
+
+Commercial can submit:
+
+```text
+Wrong phone
+Wrong activity
+Business changed
+Business closed
+Moved
+No longer ships
+High volume
+Potential VIP
+Needs reactivation
+Other
+```
+
+Marketing/Admin reviews and updates the master data.
+
+Commercial must not silently overwrite verified source data.
+
+---
+
+# 41. WILAYA INTELLIGENCE
+
+Create:
+
+**Analytics → Wilaya Intelligence**
+
+For each Wilaya:
+
+```text
+Discovered
+Unique
+Verified
+Contactable
+Ready
+Contacted
+Confirmed
+Interested
+Activated
+Active
+Inactive
+Reactivated
+```
+
+Allow comparison between Wilayas.
+
+Example:
+
+```text
+Laghouat
+1,240 discovered
+830 verified
+620 contactable
+390 contacted
+120 interested
+48 activated
+39 active
+```
+
+All values must come from the actual database.
+
+---
+
+# 42. SOURCE PERFORMANCE
+
+For every source show:
+
+```text
+Candidates
+Unique
+Verified
+Contactable
+A+
+Ready
+Interested
+Confirmed
+Activated
+Active
+```
+
+Example:
+
+```text
+Google Maps
+5,200 candidates
+3,800 unique
+2,900 verified
+2,100 contactable
+320 interested
+87 activated
+```
+
+This allows DROVA to know which sources actually generate valuable Expéditeurs.
+
+---
+
+# 43. MANAGEMENT DASHBOARD
+
+Admin dashboard must contain:
+
+```text
+TOTAL MERCHANTS
+VERIFIED
+CONTACTABLE
+READY FOR CALL
+
+TOTAL COMMERCIALS
+ACTIVE COMMERCIALS
+
+CALLS TODAY
+CONFIRMED TODAY
+UNCONFIRMED TODAY
+
+INTERESTED
+FOLLOW-UPS DUE
+
+ACTIVE EXPÉDITEURS
+INACTIVE EXPÉDITEURS
+REACTIVATION CANDIDATES
+```
+
+Also show:
+
+### Commercial Ranking
+
+```text
+Commercial
+Calls
+Confirmed
+Confirmation Rate
+Interested
+Activated
+Active
+```
+
+---
+
+# 44. NOTIFICATIONS
+
+Admin:
+
+- prospects ready for assignment
+- source errors
+- failed discovery jobs
+- unusual duplicate spike
+- inactive Commercial
+- overdue follow-ups
+
+Commercial:
+
+- calls due
+- follow-up due
+- overdue follow-up
+- new assigned prospects
+- Expéditeur requiring contact
+- reactivation opportunity
+
+Manager:
+
+- team performance
+- missed follow-ups
+- low activity
+- high-performing Commercials
+
+---
+
+# 45. IMPORT / EXPORT CENTER
+
+Support:
+
+```text
+XLSX
+CSV
+```
+
+Exports:
+
+- Prospects
+- Expéditeurs
+- Calls
+- Follow-ups
+- Commercial performance
+- Wilaya analytics
+- Source performance
+
+Export must respect permissions.
+
+Commercial must not be able to export the entire company database unless explicitly authorized.
+
+---
+
+# 46. MULTI-LANGUAGE
+
+Support:
+
+```text
+Arabic
+French
+English
+```
+
+Default:
+
+**Arabic**
+
+Arabic:
+
+```text
+RTL
+```
+
+French/English:
+
+```text
+LTR
+```
+
+Use centralized translation files:
+
+```text
+ar.json
+fr.json
+en.json
+```
+
+Remember each user's language preference.
+
+Do NOT translate merchant data.
+
+Only translate the application UI.
+
+---
+
+# 47. AUDIT LOG
+
+Every sensitive action must be logged:
+
+```text
+Who
+What
+When
+Record
+Before
+After
+IP/device where appropriate
+```
+
+Examples:
+
+```text
+Created user
+Disabled user
+Changed role
+Changed password
+Assigned prospect
+Changed prospect status
+Merged merchant
+Deleted record
+Imported Excel
+Changed source configuration
+```
+
+Audit logs should be immutable to normal users.
+
+---
+
+# 48. DATABASE ARCHITECTURE
+
+Use PostgreSQL.
+
+Core entities:
+
+```text
+users
+roles
+permissions
+user_sessions
+campaigns
+sources
+connectors
+discovery_jobs
+raw_candidates
+merchants
+prospects
+prospect_evidence
+commercial_assignments
+calls
+call_outcomes
+follow_ups
+expediteurs
+expediteur_imports
+expediteur_import_rows
+expediteur_assignments
+expediteur_calls
+expediteur_followups
+expediteur_status_history
+tasks
+notifications
+audit_logs
+```
+
+Use proper foreign keys and indexes.
+
+---
+
+# 49. TECH STACK
+
+Preferred:
+
+### Frontend
+
+```text
+Next.js
+TypeScript
+Tailwind CSS
+shadcn/ui
+```
+
+### Backend
+
+```text
+Python
+FastAPI
+```
+
+### Database
+
+```text
+PostgreSQL
+```
+
+### Background processing
+
+```text
+Redis
+Celery
+```
+
+### Excel
+
+```text
+openpyxl
+```
+
+### Deployment
+
+```text
+Docker
+Docker Compose
+Nginx
+HTTPS
+```
+
+---
+
+# 50. BACKUP & DISASTER RECOVERY
+
+This is mandatory before production.
+
+Implement:
+
+```text
+Daily PostgreSQL backup
+Weekly backup
+External backup
+Restore procedure
+Backup verification
+```
+
+Do not assume VPS storage alone is a backup.
+
+Provide a documented restore process.
+
+---
+
+# 51. SECURITY
+
+Implement:
+
+- HTTPS
+- Argon2id password hashing
+- Secure sessions
+- Session expiration
+- Rate limiting
+- Admin 2FA if supported
+- Server-side RBAC
+- Environment variables
+- No secrets in Git
+- No API keys in frontend
+- Input validation
+- SQL injection protection
+- Audit logging
+- Secure password reset
+- User disable mechanism
+
+Never expose:
+
+- API keys
+- source credentials
+- database credentials
+- internal connector configuration
+
+to Commercial users.
+
+---
+
+# 52. COMPLIANCE / DISCOVERY LIMITATIONS
+
+Only use public or authorized data.
+
+Do NOT:
+
+- bypass CAPTCHA
+- bypass login
+- bypass paywalls
+- bypass access controls
+- steal cookies
+- use credential stuffing
+- use unauthorized accounts
+- scrape private profiles
+- use stolen databases
+- fabricate identities
+- infer sensitive personal information
+
+Respect applicable platform terms and access controls.
+
+---
+
+# 53. SMART PRIORITY SYSTEM
+
+Create a unified priority engine.
+
+Priority should consider:
+
+```text
+Lead Score
+Phone verification
+E-commerce activity
+Shipping evidence
+Ads activity
+Social activity
+Current courier
+Existing Expéditeur status
+Recency
+Commercial follow-up urgency
+Reactivation potential
+```
+
+Show:
+
+```text
+HIGH PRIORITY
+MEDIUM PRIORITY
+LOW PRIORITY
+```
+
+Explain why.
+
+---
+
+# 54. ADMIN COMMAND CENTER
+
+Admin should have one centralized control area:
+
+```text
+Users
+Sources
+Connectors
+Discovery
+Prospects
+Commercials
+Expéditeurs
+Analytics
+Imports
+Exports
+Notifications
+Backups
+Audit
+Settings
+```
+
+The Admin must be able to operate the entire platform without editing the database manually.
+
+---
+
+# 55. COMMERCIAL SIMPLICITY PRINCIPLE
+
+The Commercial interface must remain simple.
+
+Do NOT expose technical complexity.
+
+Commercial should mainly do:
+
+```text
+Open prospect
+↓
+Call
+↓
+Record result
+↓
+Add note
+↓
+Schedule follow-up
+↓
+Move to next prospect
+```
+
+The complexity belongs to Admin/Marketing.
+
+---
+
+# 56. PERFORMANCE INTEGRITY
+
+Never allow a Commercial to artificially increase their performance.
+
+Examples:
+
+- One call = one call
+- Confirmed = only when confirmed
+- Interested = only when explicitly selected
+- Activated = only after activation condition
+- Active = based on actual Expéditeur state
+
+Do not count dashboard actions as calls.
+
+Do not count opening a prospect as contacting it.
+
+---
+
+# 57. REAL-TIME / AUTOMATIC DASHBOARD
+
+Dashboard statistics should update automatically after:
+
+- call completion
+- status change
+- assignment
+- import
+- activation
+- reactivation
+- verification
+- discovery completion
+
+Do not require manual editing of KPI numbers.
+
+---
+
+# 58. PERFORMANCE REPORTS
+
+Generate reports:
+
+### Daily
+
+```text
+Calls
+Confirmed
+Unconfirmed
+Interested
+Follow-ups
+Activated
+```
+
+### Weekly
+
+```text
+Commercial performance
+Source performance
+Wilaya performance
+Conversion funnel
+```
+
+### Monthly
+
+```text
+Merchant growth
+New Expéditeurs
+Activated
+Active
+Inactive
+Reactivated
+Commercial productivity
+Best sources
+Best Wilayas
+Conversion rates
+Rejection reasons
+```
+
+---
+
+# 59. FINAL ACCEPTANCE TEST
+
+Before declaring the application production-ready, test this complete workflow:
+
+```text
+1. Admin logs in
+2. Admin creates Commercial user
+3. Commercial logs in
+4. Admin discovers merchants
+5. Real candidates enter database
+6. Verification runs
+7. Duplicates are detected
+8. Lead score is generated
+9. Prospect becomes Ready for Call
+10. Admin assigns prospect to Commercial
+11. Commercial sees only assigned prospect
+12. Commercial calls
+13. Commercial records CONFIRMED or UNCONFIRMED
+14. Call appears in history
+15. Performance dashboard updates
+16. Commercial creates follow-up
+17. Notification appears
+18. Merchant becomes Interested
+19. Merchant enters Expéditeur onboarding
+20. Expéditeur becomes Activated
+21. Expéditeur becomes Active
+22. Admin sees updated KPI
+23. Commercial performance updates
+24. Inactive Expéditeur enters Reactivation
+25. Commercial contacts Expéditeur
+26. Reactivation is recorded
+27. Audit log records sensitive actions
+28. Backup is created
+29. Database can be restored
+```
+
+---
+
+# 60. NON-NEGOTIABLE RULES
+
+1. REAL DATA ONLY.
+2. NEVER fabricate merchants.
+3. NEVER fabricate phone numbers.
+4. NEVER fabricate performance.
+5. NEVER fabricate calls.
+6. NEVER fabricate source evidence.
+7. NEVER fabricate 10,000 merchants.
+8. 10,000+ is a target, not a fake-data requirement.
+9. All dashboard statistics must come from the database.
+10. Passwords must never be stored in plaintext.
+11. Permissions must be enforced server-side.
+12. Commercial users only see authorized/assigned records.
+13. Admin controls user creation and account credentials.
+14. Commercial performance must distinguish confirmed and unconfirmed contacts.
+15. Historical calls and performance must remain traceable.
+16. Discovery sources must be configurable.
+17. Failed connectors must provide useful diagnostics.
+18. Production must never use the development test connector.
+19. Database must be backed up automatically.
+20. The system must be deployable to a real server.
+21. Core features must not remain merely marked `PLANNED`.
+22. Existing functionality must not be broken while implementing new modules.
+23. Do not remove existing data when updating the application.
+24. Do not overwrite historical calls, assignments, follow-ups or audit records during imports.
+25. Build the system as one coherent platform, not disconnected pages.
+
+---
+
+# FINAL PRODUCT DEFINITION
+
+The finished product is:
+
+**DROVA EXPRESS — Internal Merchant Intelligence, Commercial CRM & Expéditeur Management Platform**
+
+It must allow DROVA to answer, from one system:
+
+> Who are our potential merchants?
+
+> Which merchants are real and verified?
+
+> Which ones have valid contact information?
+
+> Which prospects have the highest shipping potential?
+
+> Which Commercial contacted each prospect?
+
+> Was the contact confirmed or unconfirmed?
+
+> What happened during the call?
+
+> When should the Commercial call again?
+
+> Which merchants are interested?
+
+> Which became Expéditeurs?
+
+> Which Expéditeurs are active?
+
+> Which became inactive?
+
+> Which can be reactivated?
+
+> Which Commercial is performing best?
+
+> Which source produces the best merchants?
+
+> Which Wilaya has the highest potential?
+
+> Why are merchants refusing or not converting?
+
+The system must transform raw merchant discovery into measurable commercial growth for DROVA Express.

@@ -1,0 +1,9 @@
+{
+  "name": "DROVA EXPRESS — Merchant Intelligence & Commercial CRM",
+  "description": "Internal operational intelligence and CRM platform for DROVA Express Algeria: merchant discovery, verification, deduplication, commercial call management, and expéditeur lifecycle.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
+

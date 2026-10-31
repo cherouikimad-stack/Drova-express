@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --drova-black: #0C0C0C;
+    --drova-surface: #141414;
+    --drova-surface-elevated: #1B1B1B;
+    --drova-border: #262626;
+    --drova-border-subtle: #1F1F1F;
+    --drova-red: #FF0000;
+    --drova-red-hover: #E00000;
+    --drova-red-glow: rgba(255, 0, 0, 0.15);
+    --drova-text-muted: #8E8E93;
+    --drova-text-dim: #545458;
+  }
+
+  body {
+    font-family: 'Cairo', 'Montserrat', system-ui, -apple-system, sans-serif;
+    background-color: #0C0C0C;
+    color: #EDEDED;
+  }
+
+  .font-latin {
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .font-arabic {
+    font-family: 'Cairo', sans-serif;
+  }
+
+  .font-mono-data {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom scrollbar for high-density tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #101010;
+}
+::-webkit-scrollbar-thumb {
+  background: #282828;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #383838;
+}
