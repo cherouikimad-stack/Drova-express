@@ -32,7 +32,13 @@ import {
   Trash2,
   CheckCircle2,
   Sparkles,
-  Info
+  Info,
+  ExternalLink,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Copy,
+  Activity
 } from 'lucide-react';
 import { storage, AdminSettings } from '../services/storage';
 import { i18n } from '../services/i18n';
@@ -47,13 +53,121 @@ import {
   DatabaseBackup
 } from '../types';
 
-export const SettingsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'about' | 'users' | 'backup' | 'general' | 'directories'>('about');
+export const SettingsView: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
+  const [activeTab, setActiveTab] = useState<'about' | 'users' | 'discovery_api' | 'backup' | 'general' | 'directories'>(
+    (initialTab as any) || 'about'
+  );
 
   const [settings, setSettings] = useState<AdminSettings>(() => storage.getSettings());
   const [saved, setSaved] = useState(false);
   const [session, setSession] = useState(() => storage.getUserSession());
   const [currentLang, setCurrentLang] = useState<Language>(() => i18n.getCurrentLanguage());
+
+  // Discovery API Keys State (Manual Configuration)
+  const [googleKeyInput, setGoogleKeyInput] = useState('');
+  const [metaTokenInput, setMetaTokenInput] = useState('');
+  const [customRefererInput, setCustomRefererInput] = useState('');
+  const [showGoogleKey, setShowGoogleKey] = useState(false);
+  const [showMetaToken, setShowMetaToken] = useState(false);
+  const [apiSaveStatus, setApiSaveStatus] = useState<string | null>(null);
+  const [apiSaveError, setApiSaveError] = useState<string | null>(null);
+  const [apiTesting, setApiTesting] = useState(false);
+  const [apiTestResults, setApiTestResults] = useState<{
+    google?: { success: boolean; status: number; message: string; isReferrerBlocked?: boolean };
+    meta?: { success: boolean; status: number; message: string; isRestricted?: boolean };
+  } | null>(null);
+  const [serverApiStatus, setServerApiStatus] = useState<{
+    googlePlaces?: { configured: boolean; maskedKey: string; customReferer: string; status: string };
+    metaAds?: { configured: boolean; maskedToken: string; status: string };
+  } | null>(null);
+
+  const fetchDiscoveryStatus = async () => {
+    try {
+      const res = await fetch('/api/discovery/status');
+      if (res.ok) {
+        const data = await res.json();
+        setServerApiStatus(data);
+        if (data.googlePlaces?.customReferer) {
+          setCustomRefererInput(data.googlePlaces.customReferer);
+        }
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchDiscoveryStatus();
+  }, []);
+
+  const handleSaveApiKeys = async () => {
+    setApiTesting(true);
+    setApiSaveStatus(null);
+    setApiSaveError(null);
+    setApiTestResults(null);
+    try {
+      const saveRes = await fetch('/api/discovery/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          googlePlacesApiKey: googleKeyInput.trim() || undefined,
+          metaAccessToken: metaTokenInput.trim() || undefined,
+          customReferer: customRefererInput.trim(),
+        }),
+      });
+      const saveData = await saveRes.json();
+      if (!saveData.success) {
+        setApiSaveError(saveData.message || 'فشل حفظ المفاتيح');
+        setApiTesting(false);
+        return;
+      }
+
+      setApiSaveStatus('تم حفظ وتحديث المفاتيح على الخادم بنجاح! جاري اختبار الاتصال الحي...');
+
+      // Test Google Places
+      let googleTest: any = null;
+      try {
+        const gRes = await fetch('/api/discovery/google-places', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: 'clothing stores in Laghouat Algeria' }),
+        });
+        const gData = await gRes.json();
+        googleTest = {
+          success: gData.success,
+          status: gData.httpStatus || gRes.status,
+          message: gData.errorMessage || (gData.success ? `اتصال ناجح (أعيد ${gData.places?.length || 0} مكان)` : 'فشل الطلب'),
+          isReferrerBlocked: gData.isReferrerBlocked,
+        };
+      } catch (err: any) {
+        googleTest = { success: false, status: 0, message: err?.message || 'تعذر الاتصال' };
+      }
+
+      // Test Meta Ads
+      let metaTest: any = null;
+      try {
+        const mRes = await fetch('/api/discovery/meta-ads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword: 'clothing', wilaya: 'Laghouat' }),
+        });
+        const mData = await mRes.json();
+        metaTest = {
+          success: mData.success,
+          status: mData.httpStatus || mRes.status,
+          message: mData.errorMessage || (mData.success ? `اتصال ناجح (أعيد ${mData.ads?.length || 0} إعلان)` : 'حالة القيد الإقليمي'),
+          isRestricted: mData.isRestricted,
+        };
+      } catch (err: any) {
+        metaTest = { success: false, status: 0, message: err?.message || 'تعذر الاتصال' };
+      }
+
+      setApiTestResults({ google: googleTest, meta: metaTest });
+      fetchDiscoveryStatus();
+    } catch (err: any) {
+      setApiSaveError(err?.message || 'حدث خطأ أثناء حفظ واختبار المفاتيح');
+    } finally {
+      setApiTesting(false);
+    }
+  };
 
   // User Accounts State (Section 4, 5, 7)
   const [userAccounts, setUserAccounts] = useState<UserAccount[]>(() => storage.getUserAccounts());
@@ -110,6 +224,8 @@ export const SettingsView: React.FC = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
+
+
 
   // --- User Account Actions ---
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -251,6 +367,15 @@ export const SettingsView: React.FC = () => {
           >
             <HardDrive size={13} />
             <span>النسخ الاحتياطي</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('discovery_api')}
+            className={`px-3 py-1.5 font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'discovery_api' ? 'bg-[#FF0000] text-white shadow' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <KeyRound size={13} />
+            <span>مفاتيح الربط والـ API</span>
           </button>
           <button
             onClick={() => setActiveTab('general')}
@@ -483,7 +608,7 @@ export const SettingsView: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="file"
                   accept=".json"
@@ -624,16 +749,16 @@ export const SettingsView: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[#8E8E93] text-[11px] block">
-                  وزن رقم الهاتف الجزائري الصحيح ({settings.scoringWeights.phoneValid} نقطة)
+                  وزن رقم الهاتف الجزائري الصحيح ({settings.weights?.phone || 25} نقطة)
                 </label>
                 <input
                   type="range"
                   min="10"
                   max="50"
-                  value={settings.scoringWeights.phoneValid}
+                  value={settings.weights?.phone || 25}
                   onChange={e => setSettings({
                     ...settings,
-                    scoringWeights: { ...settings.scoringWeights, phoneValid: parseInt(e.target.value) }
+                    weights: { ...settings.weights, phone: parseInt(e.target.value) }
                   })}
                   className="w-full accent-[#FF0000]"
                 />
@@ -641,16 +766,16 @@ export const SettingsView: React.FC = () => {
 
               <div className="space-y-1">
                 <label className="text-[#8E8E93] text-[11px] block">
-                  وزن مؤشر التجارة الإلكترونية والشحن ({settings.scoringWeights.ecommerceSignal} نقطة)
+                  وزن مؤشر التجارة الإلكترونية والشحن ({settings.weights?.ecommerce || 30} نقطة)
                 </label>
                 <input
                   type="range"
                   min="10"
                   max="40"
-                  value={settings.scoringWeights.ecommerceSignal}
+                  value={settings.weights?.ecommerce || 30}
                   onChange={e => setSettings({
                     ...settings,
-                    scoringWeights: { ...settings.scoringWeights, ecommerceSignal: parseInt(e.target.value) }
+                    weights: { ...settings.weights, ecommerce: parseInt(e.target.value) }
                   })}
                   className="w-full accent-[#FF0000]"
                 />
@@ -668,6 +793,266 @@ export const SettingsView: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ================= TAB: DISCOVERY API KEYS (MANUAL CONFIGURATION) ================= */}
+      {activeTab === 'discovery_api' && (
+        <div className="space-y-6">
+          {/* Top Info Banner */}
+          <div className="p-4 bg-[#141414] border border-[#2E2E2E] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-[#1F1F1F] text-[#FF0000] border border-[#333333]">
+                <KeyRound size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">مفاتيح الربط البرمجي السحابي (Discovery API Keys)</h3>
+                <p className="text-[#8E8E93] text-[11px] mt-0.5">
+                  أدخل مفاتيحك الخاصة بـ Google Places و Meta Ads يدوياً هنا ليتم حفظها واختبارها فوراً على الخادم
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={fetchDiscoveryStatus}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1C1C] hover:bg-[#262626] border border-[#333333] text-white text-xs cursor-pointer transition-colors"
+            >
+              <RefreshCw size={12} className={apiTesting ? 'animate-spin text-[#FF0000]' : 'text-[#8E8E93]'} />
+              <span>تحديث الحالة</span>
+            </button>
+          </div>
+
+          {/* Feedback Alerts */}
+          {apiSaveStatus && (
+            <div className="p-3 bg-emerald-950/80 border border-emerald-600 text-emerald-200 text-xs flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+              <span>{apiSaveStatus}</span>
+            </div>
+          )}
+          {apiSaveError && (
+            <div className="p-3 bg-rose-950/80 border border-rose-600 text-rose-200 text-xs flex items-center gap-2">
+              <AlertTriangle size={16} className="text-rose-400 shrink-0" />
+              <span>{apiSaveError}</span>
+            </div>
+          )}
+
+          {/* Grid: Google Places & Meta Ads */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Google Places Card */}
+            <div className="p-5 bg-[#141414] border border-[#2A2A2A] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#242424] pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="font-bold text-white text-xs">Google Places API (New)</span>
+                </div>
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-mono border ${
+                    serverApiStatus?.googlePlaces?.configured
+                      ? 'bg-emerald-950/60 border-emerald-800 text-emerald-400'
+                      : 'bg-[#222222] border-[#333333] text-[#8E8E93]'
+                  }`}
+                >
+                  {serverApiStatus?.googlePlaces?.configured ? 'مُهيأ على الخادم' : 'غير مُهيأ'}
+                </span>
+              </div>
+
+              {serverApiStatus?.googlePlaces?.maskedKey && (
+                <div className="text-[11px] text-[#8E8E93]">
+                  المفتاح النشط حالياً:{' '}
+                  <span className="font-mono text-white bg-[#1A1A1A] px-1.5 py-0.5 border border-[#2A2A2A]">
+                    {serverApiStatus.googlePlaces.maskedKey}
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[#8E8E93] text-[11px] block font-medium">
+                  أدخل مفتاح Google Places API Key الجديد:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showGoogleKey ? 'text' : 'password'}
+                    placeholder="AIzaSy..."
+                    value={googleKeyInput}
+                    onChange={e => setGoogleKeyInput(e.target.value)}
+                    className="w-full bg-[#181818] border border-[#333333] px-3 py-2 pr-10 text-white font-mono text-xs focus:border-[#FF0000] outline-none"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleKey(!showGoogleKey)}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8E8E93] hover:text-white cursor-pointer"
+                  >
+                    {showGoogleKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[#8E8E93] text-[11px] block font-medium">
+                  عنوان HTTP Referer المسموح به (اختياري):
+                </label>
+                <input
+                  type="text"
+                  placeholder="اتركه فارغاً إذا كان المفتاح غير مقيد بـ Referer"
+                  value={customRefererInput}
+                  onChange={e => setCustomRefererInput(e.target.value)}
+                  className="w-full bg-[#181818] border border-[#333333] px-3 py-2 text-white font-mono text-xs focus:border-[#FF0000] outline-none"
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="p-3 bg-[#181818] border border-[#262626] text-[11px] text-[#8E8E93] space-y-1.5">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <Info size={13} className="text-blue-400" />
+                  <span>توجيه هام لضبط المفتاح في Google Cloud Console:</span>
+                </div>
+                <p>
+                  1. ادخل إلى <strong>Google Cloud Console → Credentials</strong> واختر المفتاح.
+                </p>
+                <p>
+                  2. في قسم <strong>Application restrictions</strong>، اختر <strong>None</strong> لتمكين خادم Node.js من الاتصال مباشرة دون حظر Referer.
+                </p>
+                <p>
+                  3. في قسم <strong>API restrictions</strong>، قم بتقييده على <strong>Places API (New)</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Meta Ads Card */}
+            <div className="p-5 bg-[#141414] border border-[#2A2A2A] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#242424] pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+                  <span className="font-bold text-white text-xs">Meta Ad Library / Graph API</span>
+                </div>
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-mono border ${
+                    serverApiStatus?.metaAds?.configured
+                      ? 'bg-emerald-950/60 border-emerald-800 text-emerald-400'
+                      : 'bg-[#222222] border-[#333333] text-[#8E8E93]'
+                  }`}
+                >
+                  {serverApiStatus?.metaAds?.configured ? 'مُهيأ على الخادم' : 'غير مُهيأ'}
+                </span>
+              </div>
+
+              {serverApiStatus?.metaAds?.maskedToken && (
+                <div className="text-[11px] text-[#8E8E93]">
+                  الرمز النشط حالياً:{' '}
+                  <span className="font-mono text-white bg-[#1A1A1A] px-1.5 py-0.5 border border-[#2A2A2A]">
+                    {serverApiStatus.metaAds.maskedToken}
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[#8E8E93] text-[11px] block font-medium">
+                  أدخل رمز الوصول Meta Access Token الجديد:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showMetaToken ? 'text' : 'password'}
+                    placeholder="EAA... أو App Token"
+                    value={metaTokenInput}
+                    onChange={e => setMetaTokenInput(e.target.value)}
+                    className="w-full bg-[#181818] border border-[#333333] px-3 py-2 pr-10 text-white font-mono text-xs focus:border-[#FF0000] outline-none"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMetaToken(!showMetaToken)}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8E8E93] hover:text-white cursor-pointer"
+                  >
+                    {showMetaToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#181818] border border-[#262626] text-[11px] text-[#8E8E93] space-y-1.5">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <Info size={13} className="text-amber-400" />
+                  <span>معلومات حالة Meta Ad Library في الجزائر:</span>
+                </div>
+                <p>
+                  تقيّد منصة Meta الوصول إلى إعلانات التجارة الإلكترونية العامة في الجزائر، وتتطلب حساب شريك معتمد (Verified Business App).
+                </p>
+                <p>
+                  يعالج نظام DROVA قيود Meta بشكل ذكي كـ (Restricted) دون التسبب بأي عطل في استكشاف التجار عبر Google Places والمصادر المحلية.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <div className="p-4 bg-[#141414] border border-[#2E2E2E] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs text-[#8E8E93]">
+              يمكنك أيضاً كتابة وتعديل المفاتيح مباشرة في الكود عبر الملف:{' '}
+              <span className="font-mono text-white bg-[#1C1C1C] px-1.5 py-0.5 border border-[#333333]">
+                credentials.config.ts
+              </span>
+            </div>
+            <button
+              onClick={handleSaveApiKeys}
+              disabled={apiTesting}
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#FF0000] hover:bg-[#E00000] text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-lg disabled:opacity-50"
+            >
+              <Save size={14} />
+              <span>{apiTesting ? 'جاري الحفظ واختبار الاتصال الحي...' : 'حفظ واختبار الاتصال المباشر'}</span>
+            </button>
+          </div>
+
+          {/* Live Test Results */}
+          {apiTestResults && (
+            <div className="p-5 bg-[#141414] border border-[#2E2E2E] space-y-3">
+              <h4 className="font-bold text-white text-xs flex items-center gap-2">
+                <Activity size={14} className="text-emerald-400" />
+                <span>نتائج اختبار الاتصال الحي بالمصادر:</span>
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Google Result */}
+                <div
+                  className={`p-3.5 border ${
+                    apiTestResults.google?.success
+                      ? 'bg-emerald-950/30 border-emerald-800 text-emerald-300'
+                      : apiTestResults.google?.isReferrerBlocked
+                      ? 'bg-amber-950/30 border-amber-800 text-amber-300'
+                      : 'bg-rose-950/30 border-rose-800 text-rose-300'
+                  } text-xs space-y-1`}
+                >
+                  <div className="font-bold flex items-center justify-between">
+                    <span>Google Places API (New):</span>
+                    <span className="font-mono text-[11px]">HTTP {apiTestResults.google?.status}</span>
+                  </div>
+                  <p className="text-[11px] opacity-90">{apiTestResults.google?.message}</p>
+                  {apiTestResults.google?.isReferrerBlocked && (
+                    <p className="text-[10px] text-amber-200 mt-1">
+                      💡 ملاحظة: يرجى إزالة قيود HTTP Referrer من Google Cloud Console وضبطها على None.
+                    </p>
+                  )}
+                </div>
+
+                {/* Meta Result */}
+                <div
+                  className={`p-3.5 border ${
+                    apiTestResults.meta?.success
+                      ? 'bg-emerald-950/30 border-emerald-800 text-emerald-300'
+                      : apiTestResults.meta?.isRestricted
+                      ? 'bg-blue-950/30 border-blue-800 text-blue-300'
+                      : 'bg-rose-950/30 border-rose-800 text-rose-300'
+                  } text-xs space-y-1`}
+                >
+                  <div className="font-bold flex items-center justify-between">
+                    <span>Meta Ad Library:</span>
+                    <span className="font-mono text-[11px]">
+                      {apiTestResults.meta?.isRestricted ? 'Restricted' : `HTTP ${apiTestResults.meta?.status}`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-90">{apiTestResults.meta?.message}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

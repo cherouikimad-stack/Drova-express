@@ -10,12 +10,13 @@ import {
   Zap,
   Activity,
   Layers,
-  RefreshCw
+  RefreshCw,
+  KeyRound
 } from 'lucide-react';
 import { sourceRegistry } from '../services/connectors';
 import { SourceType } from '../types';
 
-export const SourcesView: React.FC = () => {
+export const SourcesView: React.FC<{ onNavigate?: (view: any) => void }> = ({ onNavigate }) => {
   const [providers, setProviders] = useState(() => sourceRegistry.getAllProviders());
   const [healthStatus, setHealthStatus] = useState<Record<string, { status: string; latency: number; msg: string }>>({});
   const [loading, setLoading] = useState(false);
@@ -59,14 +60,26 @@ export const SourcesView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={checkAllHealth}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1C1C] hover:bg-[#262626] border border-[#333333] text-xs font-medium text-white transition-colors"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin text-[#FF0000]' : 'text-[#8E8E93]'} />
-          <span>فحص حالة الاتصال (Health Check)</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('settings')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF0000] hover:bg-[#E00000] text-xs font-bold text-white transition-colors cursor-pointer shadow-md"
+            >
+              <KeyRound size={13} />
+              <span>إدخال وتعديل مفاتيح API يدوياً</span>
+            </button>
+          )}
+
+          <button
+            onClick={checkAllHealth}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1C1C] hover:bg-[#262626] border border-[#333333] text-xs font-medium text-white transition-colors"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin text-[#FF0000]' : 'text-[#8E8E93]'} />
+            <span>فحص حالة الاتصال (Health Check)</span>
+          </button>
+        </div>
       </div>
 
       {/* Philosophy banner */}

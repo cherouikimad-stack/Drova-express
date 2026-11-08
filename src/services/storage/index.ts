@@ -33,7 +33,9 @@ import {
   CommercialFeedback,
   NotificationItem,
   ReactivationCandidate,
-  DatabaseBackup
+  DatabaseBackup,
+  PerformanceScoringWeights,
+  CommercialPerformanceReport
 } from '../../types';
 import {
   INITIAL_PROSPECTS,
@@ -59,6 +61,11 @@ import {
   generateExpediteurId
 } from '../crm';
 import { hashPassword, verifyPassword, generateSalt } from '../auth/crypto';
+import { firestoreService } from '../firebase/firestoreService';
+import { authService } from '../firebase/authService';
+import { checkDuplicate, normalizeBusinessName } from '../deduplication';
+import { db } from '../firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
   PROSPECTS: 'drova_prospects_v2',
@@ -95,6 +102,7 @@ export interface AdminSettings {
     nationalDelivery: number;
     whatsapp: number;
   };
+  performanceWeights: PerformanceScoringWeights;
 }
 
 const DEFAULT_SETTINGS: AdminSettings = {
@@ -108,6 +116,14 @@ const DEFAULT_SETTINGS: AdminSettings = {
     ads: 20,
     nationalDelivery: 15,
     whatsapp: 10,
+  },
+  performanceWeights: {
+    contactActivity: 25,
+    successfulContacts: 20,
+    confirmedMerchants: 20,
+    expediteurConversion: 15,
+    followUpCompletion: 10,
+    dataQualityDiscipline: 10,
   },
 };
 
@@ -125,130 +141,15 @@ const DEFAULT_USER_ACCOUNTS: UserAccount[] = [
     created_at: '2026-10-01',
     created_by: 'SYSTEM',
   },
-  {
-    id: 'usr_mourad',
-    full_name: 'Mourad Karmoula',
-    username: 'mouradkarmoula',
-    password_hash: '7a9c8b0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
-    salt: 'salt_mourad_2026',
-    role: 'commercial',
-    phone: '+213550998877',
-    email: 'mourad.karmoula@drova-express.dz',
-    status: 'active',
-    created_at: '2026-10-05',
-    created_by: 'usr_cherouik',
-  },
-  {
-    id: 'usr_amine',
-    full_name: 'Amine Belhadj',
-    username: 'amine_b',
-    password_hash: '8b0d9c1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-    salt: 'salt_amine_2026',
-    role: 'commercial',
-    phone: '+213661123456',
-    email: 'amine.belhadj@drova-express.dz',
-    status: 'active',
-    created_at: '2026-10-05',
-    created_by: 'usr_cherouik',
-  },
-  {
-    id: 'usr_karim',
-    full_name: 'Karim Khelifi',
-    username: 'karim_k',
-    password_hash: '9c1e0d2345678901abcdef2345678901abcdef2345678901abcdef2345678901',
-    salt: 'salt_karim_2026',
-    role: 'commercial_manager',
-    phone: '+213770456123',
-    email: 'karim.khelifi@drova-express.dz',
-    status: 'active',
-    created_at: '2026-10-05',
-    created_by: 'usr_cherouik',
-  },
-  {
-    id: 'usr_reda',
-    full_name: 'Reda Marketing',
-    username: 'reda_mkt',
-    password_hash: '0d2f1e3456789012abcdef3456789012abcdef3456789012abcdef3456789012',
-    salt: 'salt_reda_2026',
-    role: 'admin_marketing',
-    phone: '+213555889900',
-    email: 'reda.marketing@drova-express.dz',
-    status: 'active',
-    created_at: '2026-10-01',
-    created_by: 'usr_cherouik',
-  },
-  {
-    id: 'usr_zineb',
-    full_name: 'Zineb Audit',
-    username: 'zineb_v',
-    password_hash: '1e3a2f4567890123abcdef4567890123abcdef4567890123abcdef4567890123',
-    salt: 'salt_zineb_2026',
-    role: 'viewer',
-    phone: '+213660332211',
-    email: 'zineb.audit@drova-express.dz',
-    status: 'active',
-    created_at: '2026-10-10',
-    created_by: 'usr_cherouik',
-  },
 ];
 
 const DEFAULT_COMMERCIAL_ACCOUNTS: CommercialAccount[] = [
   { user_id: 'usr_cherouik', display_name: 'Cherouik Imad', username: 'cherouik', role: 'super_admin', phone: '+213550112233', status: 'active', created_at: '2026-10-01' },
-  { user_id: 'usr_mourad', display_name: 'Mourad Karmoula', username: 'mouradkarmoula', role: 'commercial', phone: '+213550998877', status: 'active', created_at: '2026-10-05' },
-  { user_id: 'usr_amine', display_name: 'Amine Belhadj', username: 'amine_b', role: 'commercial', phone: '+213661123456', status: 'active', created_at: '2026-10-05' },
-  { user_id: 'usr_karim', display_name: 'Karim Khelifi', username: 'karim_k', role: 'commercial_manager', phone: '+213770456123', status: 'active', created_at: '2026-10-10' },
-  { user_id: 'usr_reda', display_name: 'Reda Marketing', username: 'reda_mkt', role: 'admin_marketing', phone: '+213555889900', status: 'active', created_at: '2026-10-01' },
-  { user_id: 'usr_zineb', display_name: 'Zineb Audit', username: 'zineb_v', role: 'viewer', phone: '+213660332211', status: 'active', created_at: '2026-10-10' },
 ];
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif_1',
-    recipient_role: 'all',
-    title: 'تنبيه طابور المتابعة التجارية',
-    message: 'هناك 12 شاحن جديد بحاجة لتوزيع المسؤوليات والمتابعة الهاتفية السريعة.',
-    type: 'warning',
-    link_view: 'commercial_queue',
-    read: false,
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: 'notif_2',
-    recipient_role: 'commercial',
-    title: 'مواعيد متابعات مستعجلة لليوم',
-    message: 'لديك مواعيد اتصال مجدولة مع تجار مهتمين في ولايات وهران والجزائر العاصمة.',
-    type: 'urgent',
-    link_view: 'follow_ups',
-    read: false,
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: 'notif_3',
-    recipient_role: 'super_admin',
-    title: 'النسخ الاحتياطي التلقائي مؤكد',
-    message: 'تم فحص سلامة وتكامل قاعدة البيانات الوطنية، جميع الجداول والمسارات موثقة بنجاح.',
-    type: 'success',
-    link_view: 'settings',
-    read: false,
-    created_at: new Date(Date.now() - 14400000).toISOString(),
-  },
-];
+const INITIAL_NOTIFICATIONS: NotificationItem[] = [];
 
-const INITIAL_COMMERCIAL_FEEDBACKS: CommercialFeedback[] = [
-  {
-    id: 'fb_1',
-    prospect_id: 'PR-ALG-0001',
-    prospect_name: 'Elegance Mode Alger',
-    commercial_id: 'usr_mourad',
-    commercial_name: 'Mourad Karmoula',
-    category: 'high_volume_vip',
-    field_name: 'estimated_parcels',
-    reported_value: '50+ colis/jour',
-    notes: 'التاجر أكد شحن أكثر من 70 طرد يومياً عبر 48 ولاية ويرغب في تسعيرة خاصة للشرق والغرب الجزائري.',
-    status: 'pending',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-];
+const INITIAL_COMMERCIAL_FEEDBACKS: CommercialFeedback[] = [];
 
 class StorageManager {
   private prospects: Prospect[] = [];
@@ -279,27 +180,47 @@ class StorageManager {
   };
   private settings: AdminSettings = DEFAULT_SETTINGS;
   private listeners: Set<() => void> = new Set();
+  private isSyncingWithFirestore = false;
+  private unsubscribers: Array<() => void> = [];
 
   constructor() {
     this.loadFromStorage();
+    this.initFirestoreSync();
   }
 
   private loadFromStorage() {
     try {
+      // Purge any simulated or fake records so database contains only 100% verified real merchants
+      const prodVersion = localStorage.getItem('drova_clean_zero_fake_v4');
+      if (!prodVersion) {
+        localStorage.removeItem(STORAGE_KEYS.PROSPECTS);
+        localStorage.removeItem(STORAGE_KEYS.EVIDENCE);
+        localStorage.removeItem(STORAGE_KEYS.CAMPAIGNS);
+        localStorage.setItem('drova_clean_zero_fake_v4', 'true');
+      }
+
       const storedProspects = localStorage.getItem(STORAGE_KEYS.PROSPECTS);
-      this.prospects = storedProspects ? JSON.parse(storedProspects) : INITIAL_PROSPECTS;
+      const parsedProspects = storedProspects ? JSON.parse(storedProspects) : [];
+      // Strictly filter out any mock, fake, or simulated records
+      this.prospects = Array.isArray(parsedProspects)
+        ? parsedProspects.filter((p: any) => {
+            if (p.data_origin === 'simulated') return false;
+            if (p.id?.startsWith('pros_alg_') || p.id?.startsWith('pros_oran_')) return false;
+            return true;
+          })
+        : [];
 
       const storedEvidence = localStorage.getItem(STORAGE_KEYS.EVIDENCE);
-      this.evidence = storedEvidence ? JSON.parse(storedEvidence) : INITIAL_EVIDENCE;
+      this.evidence = storedEvidence ? JSON.parse(storedEvidence) : [];
 
       const storedCampaigns = localStorage.getItem(STORAGE_KEYS.CAMPAIGNS);
-      this.campaigns = storedCampaigns ? JSON.parse(storedCampaigns) : INITIAL_CAMPAIGNS;
+      this.campaigns = storedCampaigns ? JSON.parse(storedCampaigns) : [];
 
       const storedLogs = localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS);
-      this.auditLogs = storedLogs ? JSON.parse(storedLogs) : INITIAL_AUDIT_LOGS;
+      this.auditLogs = storedLogs ? JSON.parse(storedLogs) : [];
 
       const storedMissing = localStorage.getItem(STORAGE_KEYS.MISSING_PHONE_POOL);
-      this.missingPhonePool = storedMissing ? JSON.parse(storedMissing) : INITIAL_MISSING_PHONE_POOL;
+      this.missingPhonePool = storedMissing ? JSON.parse(storedMissing) : [];
 
       const storedDirs = localStorage.getItem(STORAGE_KEYS.GENERIC_DIRECTORIES);
       this.genericDirectories = storedDirs ? JSON.parse(storedDirs) : INITIAL_GENERIC_DIRECTORIES;
@@ -308,13 +229,16 @@ class StorageManager {
       this.scheduledJobs = storedJobs ? JSON.parse(storedJobs) : INITIAL_SCHEDULED_JOBS;
 
       const storedCalls = localStorage.getItem(STORAGE_KEYS.CRM_CALLS);
-      this.crmCalls = storedCalls ? JSON.parse(storedCalls) : INITIAL_CRM_CALLS;
+      const parsedCalls = storedCalls ? JSON.parse(storedCalls) : [];
+      this.crmCalls = Array.isArray(parsedCalls) ? parsedCalls.filter((c: any) => !c.call_id?.startsWith('call_demo_')) : [];
 
       const storedFollowUps = localStorage.getItem(STORAGE_KEYS.CRM_FOLLOW_UPS);
-      this.crmFollowUps = storedFollowUps ? JSON.parse(storedFollowUps) : INITIAL_CRM_FOLLOW_UPS;
+      const parsedFollowUps = storedFollowUps ? JSON.parse(storedFollowUps) : [];
+      this.crmFollowUps = Array.isArray(parsedFollowUps) ? parsedFollowUps.filter((f: any) => !f.id?.startsWith('fu_demo_')) : [];
 
       const storedExpediteurs = localStorage.getItem(STORAGE_KEYS.EXPEDITEURS);
-      this.expediteurs = storedExpediteurs ? JSON.parse(storedExpediteurs) : INITIAL_EXPEDITEURS;
+      const parsedExpediteurs = storedExpediteurs ? JSON.parse(storedExpediteurs) : [];
+      this.expediteurs = Array.isArray(parsedExpediteurs) ? parsedExpediteurs.filter((e: any) => !e.id?.startsWith('exp_')) : [];
 
       const storedImports = localStorage.getItem(STORAGE_KEYS.EXPEDITEUR_IMPORTS);
       this.expediteurImports = storedImports ? JSON.parse(storedImports) : [];
@@ -424,6 +348,194 @@ class StorageManager {
     this.listeners.forEach(fn => fn());
   }
 
+  // --- Real-time Firestore Multi-PC Synchronization ---
+  public initFirestoreSync() {
+    if (this.isSyncingWithFirestore) return;
+    this.isSyncingWithFirestore = true;
+
+    try {
+      // 1. Subscribe to Prospects in real time
+      const unsubProspects = firestoreService.subscribeProspects(
+        firestoreProspects => {
+          if (firestoreProspects && firestoreProspects.length > 0) {
+            const mergedMap = new Map<string, Prospect>();
+            // Keep local manual prospects so newly entered merchants are never lost
+            for (const p of this.prospects) {
+              if (p.data_origin === 'real_manual' || (p.source && String(p.source).toLowerCase().includes('manual'))) {
+                mergedMap.set(p.id, p);
+              }
+            }
+            // Add/overwrite with firestore items
+            for (const p of firestoreProspects) {
+              mergedMap.set(p.id, p);
+            }
+            this.prospects = Array.from(mergedMap.values());
+            try {
+              localStorage.setItem(STORAGE_KEYS.PROSPECTS, JSON.stringify(this.prospects));
+            } catch {}
+            this.notify();
+          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.prospects.length > 0) {
+            this.syncProspectsToFirestore().catch(() => {});
+          }
+        },
+        err => console.warn('Firestore prospects sync warning:', err)
+      );
+      this.unsubscribers.push(unsubProspects);
+
+      // 2. Subscribe to Calls in real time
+      const unsubCalls = firestoreService.subscribeCalls(
+        firestoreCalls => {
+          if (firestoreCalls && firestoreCalls.length > 0) {
+            this.crmCalls = firestoreCalls;
+            try {
+              localStorage.setItem(STORAGE_KEYS.CRM_CALLS, JSON.stringify(this.crmCalls));
+            } catch {}
+            this.notify();
+          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.crmCalls.length > 0) {
+            this.syncCallsToFirestore().catch(() => {});
+          }
+        },
+        err => console.warn('Firestore calls sync warning:', err)
+      );
+      this.unsubscribers.push(unsubCalls);
+
+      // 3. Subscribe to Follow-ups in real time
+      const unsubFollowUps = firestoreService.subscribeFollowUps(
+        firestoreFollowUps => {
+          if (firestoreFollowUps && firestoreFollowUps.length > 0) {
+            this.crmFollowUps = firestoreFollowUps;
+            try {
+              localStorage.setItem(STORAGE_KEYS.CRM_FOLLOW_UPS, JSON.stringify(this.crmFollowUps));
+            } catch {}
+            this.notify();
+          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.crmFollowUps.length > 0) {
+            this.syncFollowUpsToFirestore().catch(() => {});
+          }
+        },
+        err => console.warn('Firestore follow-ups sync warning:', err)
+      );
+      this.unsubscribers.push(unsubFollowUps);
+
+      // 4. Subscribe to Expéditeurs in real time
+      const unsubExpediteurs = firestoreService.subscribeExpediteurs(
+        firestoreExpediteurs => {
+          if (firestoreExpediteurs && firestoreExpediteurs.length > 0) {
+            this.expediteurs = firestoreExpediteurs;
+            try {
+              localStorage.setItem(STORAGE_KEYS.EXPEDITEURS, JSON.stringify(this.expediteurs));
+            } catch {}
+            this.notify();
+          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.expediteurs.length > 0) {
+            this.syncExpediteursToFirestore().catch(() => {});
+          }
+        },
+        err => console.warn('Firestore expediteurs sync warning:', err)
+      );
+      this.unsubscribers.push(unsubExpediteurs);
+
+      // 5. Subscribe to Users in real time
+      const unsubUsers = firestoreService.subscribeUsers(
+        firestoreUsers => {
+          if (firestoreUsers && firestoreUsers.length > 0) {
+            const userMap = new Map<string, UserAccount>();
+            // Keep local accounts so newly created team accounts in this browser aren't lost
+            for (const u of this.userAccounts) {
+              userMap.set(u.username.toLowerCase(), u);
+            }
+            // Add/overwrite from Firestore
+            for (const u of firestoreUsers) {
+              userMap.set(u.username.toLowerCase(), u);
+            }
+            this.userAccounts = Array.from(userMap.values());
+            this.commercialAccounts = this.userAccounts
+              .filter(u => u.role === 'commercial' || u.role === 'commercial_manager' || u.role === 'super_admin')
+              .map(u => ({
+                user_id: u.id,
+                display_name: u.full_name,
+                username: u.username,
+                role: u.role,
+                phone: u.phone || '',
+                status: u.status,
+                created_at: u.created_at
+              }));
+            try {
+              localStorage.setItem(STORAGE_KEYS.USER_ACCOUNTS, JSON.stringify(this.userAccounts));
+              localStorage.setItem(STORAGE_KEYS.COMMERCIAL_ACCOUNTS, JSON.stringify(this.commercialAccounts));
+            } catch {}
+            this.notify();
+          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.userAccounts.length > 0) {
+            this.syncUsersToFirestore().catch(() => {});
+          }
+        }
+      );
+      this.unsubscribers.push(unsubUsers);
+
+      // 6. Subscribe to Commercial Feedbacks in real time
+      const unsubFeedbacks = firestoreService.subscribeFeedbacks(feedbacks => {
+        if (feedbacks && feedbacks.length > 0) {
+          this.commercialFeedbacks = feedbacks;
+          try {
+            localStorage.setItem(STORAGE_KEYS.COMMERCIAL_FEEDBACKS, JSON.stringify(this.commercialFeedbacks));
+          } catch {}
+          this.notify();
+        }
+      });
+      this.unsubscribers.push(unsubFeedbacks);
+
+      // 7. Subscribe to Notifications in real time
+      const unsubNotifs = firestoreService.subscribeNotifications(notifs => {
+        if (notifs && notifs.length > 0) {
+          this.notifications = notifs;
+          try {
+            localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(this.notifications));
+          } catch {}
+          this.notify();
+        }
+      });
+      this.unsubscribers.push(unsubNotifs);
+    } catch (e) {
+      console.warn('Could not initialize Firestore real-time listeners:', e);
+    }
+  }
+
+  public async syncProspectsToFirestore() {
+    for (const p of this.prospects) {
+      await firestoreService.saveProspect(p).catch(() => {});
+    }
+  }
+
+  public async syncCallsToFirestore() {
+    for (const c of this.crmCalls) {
+      await firestoreService.recordCall(c).catch(() => {});
+    }
+  }
+
+  public async syncFollowUpsToFirestore() {
+    for (const f of this.crmFollowUps) {
+      await firestoreService.saveFollowUp(f).catch(() => {});
+    }
+  }
+
+  public async syncExpediteursToFirestore() {
+    for (const e of this.expediteurs) {
+      await firestoreService.saveExpediteur(e).catch(() => {});
+    }
+  }
+
+  public async syncUsersToFirestore() {
+    for (const u of this.userAccounts) {
+      await firestoreService.saveUser(u).catch(() => {});
+    }
+  }
+
+  public async syncInitialDataToFirestore() {
+    await this.syncUsersToFirestore();
+    await this.syncProspectsToFirestore();
+    await this.syncExpediteursToFirestore();
+    await this.syncCallsToFirestore();
+    await this.syncFollowUpsToFirestore();
+  }
+
   // --- National 10,000 Target Progress Metrics (Section 20 & 28) ---
   public getNationalTargetStats(): HighVolumeNationalTarget {
     const verified = this.prospects.filter(p => p.verification_status === 'VERIFIED').length;
@@ -488,6 +600,7 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.updateProspect(id, updates).catch(() => {});
     return true;
   }
 
@@ -518,6 +631,123 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.saveProspectsBatch(safeProspects).catch(() => {});
+  }
+
+  public async addManualProspect(prospect: Prospect): Promise<void> {
+    const now = new Date().toISOString();
+    const repName = prospect.assigned_commercial || prospect.added_by || this.userSession.name || 'Commercial';
+    const repId = prospect.creator_id || this.userSession.user_id || this.userSession.username || 'usr_commercial';
+    const newProspect: Prospect = {
+      ...prospect,
+      id: prospect.id || `pros_man_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      data_origin: 'real_manual',
+      source: 'manual_commercial_entry',
+      created_at: prospect.created_at || now,
+      updated_at: now,
+      added_by: repName,
+      creator_id: repId,
+      assigned_commercial: repName,
+      responsible: repName,
+      verification_status: prospect.verification_status || 'VERIFIED',
+      phone_verification_status: prospect.phone_verification_status || 'VERIFIED',
+      business_location_verification: prospect.business_location_verification || 'VERIFIED',
+      score: prospect.score || 'A',
+    };
+
+    // Pre-check for duplicate in local memory cache
+    const dupCheck = checkDuplicate(newProspect, this.prospects);
+    if (dupCheck.isMatch && dupCheck.existingRecord) {
+      const existing = dupCheck.existingRecord;
+      const normCandName = normalizeBusinessName(newProspect.name);
+      const normExistName = normalizeBusinessName(existing.name);
+      if (normCandName === normExistName) {
+        throw new Error(`هذا التاجر مسجل مسبقاً في النظام. (الاسم: "${existing.name}"، الهاتف: ${existing.phone}، المعرّف: ${existing.id})`);
+      } else {
+        throw new Error(`رقم الهاتف (${newProspect.phone}) مسجل مسبقاً للتاجر "${existing.name}" (المعرّف: ${existing.id}). لا يمكن إضافة تاجر برقم مكرر.`);
+      }
+    }
+
+    // Ensure it replaces or prepends without duplicate
+    this.prospects = [newProspect, ...this.prospects.filter(p => p.id !== newProspect.id)];
+    this.addAuditLog({
+      action: 'Manual Merchant Added',
+      prospect_id: newProspect.id,
+      details: `إضافة تاجر يدوياً بواسطة ${newProspect.added_by}: ${newProspect.name} (${newProspect.phone}) - ولاية ${newProspect.wilaya}`,
+    });
+
+    this.saveToStorage();
+    this.notify();
+    try {
+      await firestoreService.saveProspect(newProspect);
+    } catch (err: any) {
+      console.warn('Firestore manual prospect save notice:', err);
+      if (err.message && err.message.includes('مسجل مسبقاً')) {
+        this.prospects = this.prospects.filter(p => p.id !== newProspect.id);
+        this.saveToStorage();
+        this.notify();
+        throw err;
+      }
+    }
+  }
+
+  public async addSingleProspect(data: {
+    name: string;
+    phone: string;
+    wilaya: string;
+    commune?: string;
+    address?: string;
+    product?: string;
+    assigned_commercial?: string;
+    notes?: string;
+  }): Promise<Prospect> {
+    const id = `pros_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newProspect: Prospect = {
+      id,
+      name: data.name.trim(),
+      page_name: data.name.trim(),
+      merchant_type: 'متجر بيع بالتجزئة',
+      product: data.product || 'تجارة عامة',
+      category: 'عام',
+      wilaya: data.wilaya,
+      commune: data.commune || '',
+      phone: data.phone.trim(),
+      whatsapp: 'غير معروف',
+      email: '',
+      page_url: '',
+      source: 'manual_entry',
+      source_urls: [],
+      current_courier: 'غير محدد',
+      loyalty_level: 'Unknown',
+      parcel_estimate: 'غير معروف',
+      status: 'جاهز للاتصال',
+      contact_date: '',
+      next_followup: '',
+      responsible: data.assigned_commercial || this.userSession.name,
+      assigned_commercial: data.assigned_commercial || this.userSession.name,
+      notes: data.address ? `العنوان: ${data.address}. ${data.notes || ''}` : (data.notes || ''),
+      alert: '',
+      score: 'A',
+      score_reasons: ['إدخال يدوي مباشر'],
+      verification_status: 'VERIFIED',
+      verification_notes: 'تم التحقق من بيانات الاتصال',
+      phone_verification_status: 'VERIFIED',
+      business_location_verification: 'VERIFIED',
+      shipping_potential: 'HIGH',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    this.prospects.unshift(newProspect);
+    this.addAuditLog({
+      action: 'Prospect created manually',
+      prospect_id: id,
+      details: `إضافة التاجر الجديد: ${newProspect.name} (${newProspect.wilaya}) بواسطة ${this.userSession.name}`,
+    });
+
+    this.saveToStorage();
+    await firestoreService.saveProspect(newProspect).catch(() => {});
+    return newProspect;
   }
 
   public deleteProspect(id: string) {
@@ -532,6 +762,206 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.deleteProspect(id).catch(() => {});
+  }
+
+  /**
+   * Bulk Assignment & Portfolio Quota Distribution (محاصصة وتوزيع التجار على التجاريين)
+   * Splits pools of hundreds, thousands, or tens of thousands of merchants among commercial agents.
+   */
+  public async batchAssignProspects(params: {
+    prospectIds?: string[];
+    filter?: {
+      unassignedOnly?: boolean;
+      wilaya?: string;
+      category?: string;
+      minScore?: string;
+      campaignId?: string;
+    };
+    mode: 'equal_split' | 'fixed_quota' | 'wilaya_territory';
+    quotaPerCommercial?: number;
+    totalToAssign?: number;
+    targetCommercials: { name: string; id?: string }[];
+  }): Promise<{ assignedCount: number; perCommercial: Record<string, number> }> {
+    if (!params.targetCommercials || params.targetCommercials.length === 0) {
+      throw new Error('يرجى تحديد ممثل تجاري واحد على الأقل لإجراء التوزيع');
+    }
+
+    // 1. Gather target candidates pool
+    let candidatePool: Prospect[] = [];
+
+    if (params.prospectIds && params.prospectIds.length > 0) {
+      const idSet = new Set(params.prospectIds);
+      candidatePool = this.prospects.filter(p => idSet.has(p.id));
+    } else {
+      candidatePool = this.prospects.filter(p => {
+        if (params.filter?.unassignedOnly !== false) {
+          if (p.assigned_commercial && p.assigned_commercial !== '' && p.assigned_commercial !== 'غير مسند') {
+            return false;
+          }
+        }
+        if (params.filter?.wilaya && params.filter.wilaya !== 'all') {
+          if (p.wilaya !== params.filter.wilaya) return false;
+        }
+        if (params.filter?.category && params.filter.category !== 'all') {
+          if (p.category !== params.filter.category) return false;
+        }
+        if (params.filter?.campaignId && params.filter.campaignId !== 'all') {
+          if (p.campaign_id !== params.filter.campaignId) return false;
+        }
+        if (params.filter?.minScore && params.filter.minScore !== 'all') {
+          if (p.score !== params.filter.minScore) return false;
+        }
+        return true;
+      });
+    }
+
+    if (candidatePool.length === 0) {
+      return { assignedCount: 0, perCommercial: {} };
+    }
+
+    // 2. Perform distribution
+    const numCommercials = params.targetCommercials.length;
+    const perCommercialCount: Record<string, number> = {};
+    params.targetCommercials.forEach(c => {
+      perCommercialCount[c.name] = 0;
+    });
+
+    const updatesForFirestore: { id: string; data: Partial<Prospect> }[] = [];
+    const now = new Date().toISOString();
+    let assignedCount = 0;
+
+    if (params.mode === 'fixed_quota') {
+      const quota = params.quotaPerCommercial || 1000;
+      let currentIndex = 0;
+
+      for (const commercial of params.targetCommercials) {
+        let givenToThisOne = 0;
+        while (givenToThisOne < quota && currentIndex < candidatePool.length) {
+          const prospect = candidatePool[currentIndex++];
+          prospect.assigned_commercial = commercial.name;
+          prospect.responsible = commercial.name;
+          if (prospect.status === 'جديد') {
+            prospect.status = 'جاهز للتواصل';
+          }
+          prospect.updated_at = now;
+
+          updatesForFirestore.push({
+            id: prospect.id,
+            data: {
+              assigned_commercial: commercial.name,
+              responsible: commercial.name,
+              status: prospect.status,
+              updated_at: now
+            }
+          });
+
+          givenToThisOne++;
+          assignedCount++;
+        }
+        perCommercialCount[commercial.name] = givenToThisOne;
+        if (currentIndex >= candidatePool.length) break;
+      }
+    } else {
+      // equal_split
+      const maxToDistribute = params.totalToAssign && params.totalToAssign > 0 
+        ? Math.min(params.totalToAssign, candidatePool.length) 
+        : candidatePool.length;
+
+      for (let i = 0; i < maxToDistribute; i++) {
+        const commercial = params.targetCommercials[i % numCommercials];
+        const prospect = candidatePool[i];
+
+        prospect.assigned_commercial = commercial.name;
+        prospect.responsible = commercial.name;
+        if (prospect.status === 'جديد') {
+          prospect.status = 'جاهز للتواصل';
+        }
+        prospect.updated_at = now;
+
+        updatesForFirestore.push({
+          id: prospect.id,
+          data: {
+            assigned_commercial: commercial.name,
+            responsible: commercial.name,
+            status: prospect.status,
+            updated_at: now
+          }
+        });
+
+        perCommercialCount[commercial.name] = (perCommercialCount[commercial.name] || 0) + 1;
+        assignedCount++;
+      }
+    }
+
+    // 3. Persist and audit
+    const summaryList = Object.entries(perCommercialCount)
+      .map(([name, count]) => `${name}: ${count}`)
+      .join('، ');
+
+    this.addAuditLog({
+      action: 'Bulk Prospects Quota Distribution',
+      details: `تمت محاصصة وتوزيع ${assignedCount} تاجراً على ${numCommercials} ممثلين تجاريين (${summaryList}) بنمط [${params.mode === 'fixed_quota' ? 'حصة محددة' : 'تقسيم بالتساوي'}]`,
+    });
+
+    this.saveToStorage();
+    this.notify();
+
+    // Async batch save to Firestore
+    firestoreService.updateProspectsBatch(updatesForFirestore).catch(err => {
+      console.warn('Firestore bulk update warning:', err);
+    });
+
+    return { assignedCount, perCommercial: perCommercialCount };
+  }
+
+  /**
+   * Delete all synthetic/simulated prospects while preserving 100% real imported or verified data
+   */
+  public async deleteSimulatedProspects(): Promise<number> {
+    const toDeleteIds: string[] = [];
+    const keptProspects: Prospect[] = [];
+
+    this.prospects.forEach(p => {
+      const isReal = p.data_origin === 'real_imported' || p.data_origin === 'real_manual' || p.source === 'excel_import';
+      if (isReal) {
+        keptProspects.push(p);
+      } else {
+        toDeleteIds.push(p.id);
+      }
+    });
+
+    const deletedCount = toDeleteIds.length;
+    this.prospects = keptProspects;
+    this.saveToStorage();
+    this.notify();
+
+    // Remove from Firestore
+    if (toDeleteIds.length > 0) {
+      await firestoreService.deleteProspectsBatch(toDeleteIds).catch(err => {
+        console.warn('Error deleting simulated prospects from Firestore:', err);
+      });
+    }
+
+    this.addAuditLog({
+      action: 'Clean Simulated Data',
+      details: `تم تنظيف وحذف ${deletedCount} سجلاً تجريبياً مولداً برمجياً والإبقاء على ${keptProspects.length} تاجر حقيقي موثق ومستورد.`,
+    });
+
+    return deletedCount;
+  }
+
+  public getDataOriginStats(): { total: number; real: number; simulated: number } {
+    let real = 0;
+    let simulated = 0;
+    this.prospects.forEach(p => {
+      if (p.data_origin === 'real_imported' || p.data_origin === 'real_manual' || p.source === 'excel_import') {
+        real++;
+      } else {
+        simulated++;
+      }
+    });
+    return { total: this.prospects.length, real, simulated };
   }
 
   // --- Missing Phone Pool & Second-Pass Enrichment (Section 22 & 25) ---
@@ -801,7 +1231,7 @@ class StorageManager {
 
     try {
       const wilayasToScan = camp.wilaya === 'all'
-        ? ALGERIA_WILAYAS.slice(0, 10).map(w => w.nameAr)
+        ? (camp.target_number >= 500 ? ALGERIA_WILAYAS.map(w => w.nameAr) : ALGERIA_WILAYAS.slice(0, 25).map(w => w.nameAr))
         : camp.wilaya.split(',').map(s => s.trim());
 
       let totalAdded: Prospect[] = [];
@@ -809,12 +1239,13 @@ class StorageManager {
       let totalDups = 0;
       let totalRejected = 0;
       let totalMissingPushed = 0;
+      const perWilayaTarget = Math.max(10, Math.ceil(camp.target_number / wilayasToScan.length));
 
       for (const w of wilayasToScan) {
         camp.logs.push({
           timestamp: new Date().toISOString(),
           step: 'Scanning',
-          message: `فحص ولاية ${w}... ربط واد كنيس، مكتبة الإعلانات، خرائط جوجل، والأدلة الوطنية`,
+          message: `فحص ولاية ${w}... استكشاف وتعدين المتاجر النشطة وفق المعايير المحددة`,
           type: 'info',
         });
         this.saveToStorage();
@@ -824,7 +1255,7 @@ class StorageManager {
             wilaya: w,
             commune: camp.commune,
             categories: camp.categories,
-            targetNumber: Math.max(5, Math.ceil(camp.target_number / wilayasToScan.length)),
+            targetNumber: perWilayaTarget,
             phoneRequired: camp.phone_required,
             activeBusinessRequired: camp.active_business_required,
           },
@@ -838,6 +1269,45 @@ class StorageManager {
         totalRejected += result.rejectedCount;
         totalMissingPushed += result.missingPhoneCandidates.length;
 
+        // Log diagnostic errors with full API details (NEVER convert errors to silent 0 results)
+        if (result.diagnosticErrors && result.diagnosticErrors.length > 0) {
+          result.diagnosticErrors.forEach(diag => {
+            camp.logs.push({
+              timestamp: diag.timestamp,
+              step: diag.source === 'google_places' ? 'Google Places API' : 'Meta Ad Library API',
+              message: `[${diag.errorCode || 'API_ERROR'} - HTTP ${diag.httpStatus || 0}] ${diag.errorMessage} (Query: "${diag.query}")`,
+              type: 'error',
+            });
+          });
+        }
+
+        // Log Google Places performance breakdown
+        if (result.googleStats && result.googleStats.requestsCount > 0) {
+          const gs = result.googleStats;
+          camp.logs.push({
+            timestamp: new Date().toISOString(),
+            step: 'Google Places Summary',
+            message: `Google Places: Requests: ${gs.requestsCount}, Successful: ${gs.successfulCount}, Places returned: ${gs.placesReturned}, New merchants: ${gs.newMerchantsAdded}, Duplicates: ${gs.duplicatesFound}, Rejected: ${gs.rejectedCount}`,
+            type: gs.successfulCount > 0 ? 'info' : 'warn',
+          });
+        }
+
+        // Log Meta status
+        if (result.metaStatus) {
+          camp.logs.push({
+            timestamp: new Date().toISOString(),
+            step: 'Meta Ad Library Status',
+            message: `Meta: Status: ${result.metaStatus.status}, Reason: ${result.metaStatus.reason || 'Restricted in Algeria for commercial ads'}`,
+            type: result.metaStatus.status === 'restricted' ? 'warn' : 'info',
+          });
+        }
+
+        (camp as any).discovery_breakdown = {
+          googlePlaces: result.googleStats,
+          metaAds: result.metaStatus,
+          diagnosticErrors: result.diagnosticErrors,
+        };
+
         // Push candidates without phone to missing phone pool (Section 25)
         if (result.missingPhoneCandidates.length > 0) {
           this.missingPhonePool = [...result.missingPhoneCandidates, ...this.missingPhonePool];
@@ -848,10 +1318,10 @@ class StorageManager {
         const bCount = totalAdded.filter(p => p.score === 'B').length;
 
         camp.progress = {
-          discovered: totalAdded.length + totalDups + totalRejected + totalMissingPushed + 15,
-          enriched: totalAdded.length + totalDups + 8,
-          withPhone: totalAdded.length + totalDups,
-          verified: totalAdded.length,
+          discovered: totalAdded.length + totalDups + totalRejected + totalMissingPushed,
+          enriched: totalAdded.length + totalDups,
+          withPhone: totalAdded.filter(p => !!p.phone).length,
+          verified: totalAdded.filter(p => p.verification_status === 'VERIFIED' || p.verification_status === 'CONTACTABLE').length,
           duplicates: totalDups,
           rejected: totalRejected,
           scoreAPlus: aPlusCount,
@@ -875,7 +1345,7 @@ class StorageManager {
       });
       this.saveToStorage();
     } catch (err: any) {
-      console.error('Campaign execution error:', err);
+      console.warn('Campaign execution notice:', err?.message || err);
       camp.status = 'Failed';
       camp.logs.push({
         timestamp: new Date().toISOString(),
@@ -920,6 +1390,7 @@ class StorageManager {
     };
 
     this.crmCalls = [newCall, ...this.crmCalls];
+    firestoreService.recordCall(newCall).catch(() => {});
 
     // Update prospect with new status, last call details, and priority
     const prospect = this.getProspectById(callData.prospect_id);
@@ -971,6 +1442,7 @@ class StorageManager {
       };
 
       this.crmFollowUps = [newFollowUp, ...this.crmFollowUps];
+      firestoreService.saveFollowUp(newFollowUp).catch(() => {});
     }
 
     // If prospect reached "أكد التعامل مع DROVA", ensure an Expediteur record is prepared
@@ -1002,6 +1474,7 @@ class StorageManager {
           checklist: createEmptyChecklist(prospect),
         };
         this.expediteurs.push(newExp);
+        firestoreService.saveExpediteur(newExp).catch(() => {});
       }
     }
 
@@ -1019,6 +1492,7 @@ class StorageManager {
     if (item) {
       item.status = 'completed';
       this.saveToStorage();
+      firestoreService.updateFollowUp(id, { status: 'completed' }).catch(() => {});
     }
   }
 
@@ -1029,6 +1503,7 @@ class StorageManager {
       if (newTime) item.scheduled_time = newTime;
       item.status = 'rescheduled';
       this.saveToStorage();
+      firestoreService.updateFollowUp(id, { scheduled_date: newDate, ...(newTime ? { scheduled_time: newTime } : {}), status: 'rescheduled' }).catch(() => {});
     }
   }
 
@@ -1147,6 +1622,7 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.updateExpediteur(expediteurId, updates).catch(() => {});
     return exp;
   }
 
@@ -1165,6 +1641,11 @@ class StorageManager {
       if (callData.status_after) {
         exp.commercial_status = callData.status_after;
       }
+      firestoreService.updateExpediteur(exp.id, {
+        last_contact_date: exp.last_contact_date,
+        next_followup_date: exp.next_followup_date,
+        commercial_status: exp.commercial_status
+      }).catch(() => {});
     }
 
     this.addAuditLog({
@@ -1173,6 +1654,19 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.recordCall({
+      id,
+      prospect_id: exp?.prospect_id || callData.expediteur_id,
+      date: callData.date,
+      time: callData.date.includes('T') ? callData.date.split('T')[1].substring(0, 5) : '10:00',
+      call_result: callData.result as any,
+      commercial_name: callData.commercial_name,
+      notes: callData.notes || '',
+      status_before: 'مهتم',
+      status_after: 'مهتم',
+      expediteur_status_before: 'مؤكد',
+      expediteur_status_after: 'مؤكد'
+    }).catch(() => {});
     return call;
   }
 
@@ -1234,6 +1728,10 @@ class StorageManager {
         exp.assigned_commercial = commercialName;
         if (commercialId) exp.commercial_id = commercialId;
         count++;
+        firestoreService.updateExpediteur(exp.id, {
+          assigned_commercial: commercialName,
+          ...(commercialId ? { commercial_id: commercialId } : {})
+        }).catch(() => {});
       }
     });
 
@@ -1255,6 +1753,7 @@ class StorageManager {
       if (expediteurIds.includes(exp.id)) {
         exp.commercial_status = commercialStatus;
         count++;
+        firestoreService.updateExpediteur(exp.id, { commercial_status: commercialStatus }).catch(() => {});
       }
     });
 
@@ -1283,7 +1782,7 @@ class StorageManager {
       if (existingIndex >= 0) {
         // Section 14: Never lose existing CRM data! Merge non-destructively
         const existing = this.expediteurs[existingIndex];
-        this.expediteurs[existingIndex] = {
+        const merged = {
           ...newExp,
           ...existing, // preserve existing calls, assignments, status
           business_name: newExp.business_name || existing.business_name,
@@ -1297,8 +1796,11 @@ class StorageManager {
           website: newExp.website || existing.website,
           notes: existing.notes ? `${existing.notes}\n[Import Excel: ${newExp.notes || ''}]` : newExp.notes,
         };
+        this.expediteurs[existingIndex] = merged;
+        firestoreService.saveExpediteur(merged).catch(() => {});
       } else {
         this.expediteurs.unshift(newExp);
+        firestoreService.saveExpediteur(newExp).catch(() => {});
       }
     });
 
@@ -1412,7 +1914,7 @@ class StorageManager {
       { id: 'tiktok', name: 'حسابات تيك توك التجارية' },
       { id: 'ouedkniss', name: 'متاجر واد كنيس (Ouedkniss)' },
       { id: 'pages_jaunes', name: 'الصفحات الصفراء الجزائرية' },
-      { id: 'annuaires_dz', name: 'دليل الشركات 58 ولاية' },
+      { id: 'annuaires_dz', name: 'دليل الشركات 69 ولاية' },
       { id: 'web_search', name: 'المواقع الإلكترونية المستقلة' },
       { id: 'reverse_discovery', name: 'الزحف العكسي والتقاطع الشبكي' },
     ];
@@ -1451,7 +1953,10 @@ class StorageManager {
   public getCommercialPerformanceMetrics(): {
     name: string;
     assigned: number;
+    contacted: number;
+    notContacted: number;
     calls: number;
+    reached: number;
     confirmed: number;
     unconfirmed: number;
     noAnswer: number;
@@ -1461,78 +1966,356 @@ class StorageManager {
     activated: number;
     active: number;
     conversionRate: number;
+    contactRate: number;
+    score: number;
+    rank: string;
   }[] {
+    const reports = this.getCommercialPerformanceReports('all');
+    return reports.map(r => ({
+      name: r.name,
+      assigned: r.assigned,
+      contacted: r.contacted,
+      notContacted: r.notContacted,
+      calls: r.totalCalls,
+      reached: r.successfulCalls,
+      confirmed: r.confirmedCount,
+      unconfirmed: r.unansweredCalls + r.busyCalls + r.wrongNumberCalls,
+      noAnswer: r.unansweredCalls,
+      callbacks: r.callbackCount,
+      confirmationRate: r.confirmedRate,
+      interested: r.interestedCount,
+      activated: r.onboardingCount,
+      active: r.activeMerchantsCount,
+      conversionRate: r.expediteurConversionRate,
+      contactRate: r.contactRate,
+      score: r.score,
+      rank: r.rank,
+    }));
+  }
+
+  // --- Real Activity-Based Employee Performance System ---
+  public getCommercialPerformanceReports(
+    period: 'today' | 'week' | 'month' | 'all' | 'custom' = 'all',
+    customRange?: { from: string; to: string }
+  ): CommercialPerformanceReport[] {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    let periodStart = '';
+    let periodEnd = todayStr;
+
+    if (period === 'today') {
+      periodStart = todayStr;
+    } else if (period === 'week') {
+      const d = new Date(today);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      d.setDate(diff);
+      periodStart = d.toISOString().split('T')[0];
+    } else if (period === 'month') {
+      periodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+    } else if (period === 'custom' && customRange) {
+      periodStart = customRange.from;
+      periodEnd = customRange.to;
+    }
+
     const teamMembers = this.userAccounts
       .filter(u => u.status === 'active' && (u.role === 'commercial' || u.role === 'commercial_manager' || u.role === 'super_admin' || u.role === 'sales'))
-      .map(u => ({ id: u.id, name: u.full_name, username: u.username }));
+      .map(u => ({ id: u.id, name: u.full_name, username: u.username, role: u.role, phone: u.phone }));
 
-    // Fallback if empty
     const list = teamMembers.length > 0 ? teamMembers : [
-      { id: 'usr_cherouik', name: 'Cherouik Imad', username: 'cherouik' },
-      { id: 'usr_mourad', name: 'Mourad Karmoula', username: 'mouradkarmoula' },
-      { id: 'usr_amine', name: 'Amine Belhadj', username: 'amine_b' },
-      { id: 'usr_karim', name: 'Karim Khelifi', username: 'karim_k' },
+      { id: 'usr_cherouik', name: 'Cherouik Imad', username: 'cherouik', role: 'super_admin' as UserRole, phone: '+213550112233' },
     ];
 
+    const weights = this.settings.performanceWeights || {
+      contactActivity: 25,
+      successfulContacts: 20,
+      confirmedMerchants: 20,
+      expediteurConversion: 15,
+      followUpCompletion: 10,
+      dataQualityDiscipline: 10,
+    };
+
     return list.map(member => {
+      // 1. Assigned prospects to this commercial
       const assignedProspects = this.prospects.filter(
-        p => p.assigned_commercial === member.name || p.assigned_commercial === member.username || p.responsible === member.name
-      );
-      const memberCalls = this.crmCalls.filter(
-        c => c.commercial_name === member.name || c.commercial_id === member.id
+        p => p.assigned_commercial === member.name ||
+             p.assigned_commercial === member.username ||
+             p.responsible === member.name ||
+             (p as any).assigned_commercial_id === member.id
       );
 
-      // MANDATORY Section 26: Confirmed vs Unconfirmed Contacts
-      const confirmedCalls = memberCalls.filter(
+      // Manually added merchants by this commercial agent
+      const mName = (member.name || '').toLowerCase();
+      const mUser = (member.username || '').toLowerCase();
+      const mId = (member.id || '').toLowerCase();
+
+      const manuallyAddedCount = this.prospects.filter(p => {
+        const isManual = p.data_origin === 'real_manual' || (p.source && String(p.source).toLowerCase().includes('manual'));
+        if (!isManual) return false;
+
+        const pAdded = (p.added_by || '').toLowerCase();
+        const pCreator = (p.creator_id || '').toLowerCase();
+        const pAssigned = (p.assigned_commercial || '').toLowerCase();
+        const pResp = (p.responsible || '').toLowerCase();
+
+        return (
+          (mName && (pAdded === mName || pAssigned === mName || pResp === mName)) ||
+          (mUser && (pAdded === mUser || pAssigned === mUser || pResp === mUser)) ||
+          (mId && (pCreator === mId || (p as any).assigned_commercial_id === mId))
+        );
+      }).length;
+
+      // 2. Calls made by this commercial (filtered by period)
+      const allMemberCalls = this.crmCalls.filter(
+        c => c.commercial_name === member.name ||
+             c.commercial_name === member.username ||
+             c.commercial_id === member.id
+      );
+
+      const periodCalls = allMemberCalls.filter(c => {
+        if (!periodStart) return true;
+        const callDate = c.date.split('T')[0];
+        return callDate >= periodStart && callDate <= periodEnd;
+      });
+
+      // 3. STRICT RULE: Contacted ONLY if there is a valid CRM call
+      const contactedProspectIdSet = new Set<string>();
+      periodCalls.forEach(c => {
+        if (c.prospect_id) contactedProspectIdSet.add(c.prospect_id);
+      });
+
+      const contactedAssignedCount = assignedProspects.filter(p => contactedProspectIdSet.has(p.id)).length;
+      const actuallyContacted = period === 'all'
+        ? Math.max(contactedAssignedCount, contactedProspectIdSet.size)
+        : contactedProspectIdSet.size;
+
+      const assignedCount = assignedProspects.length;
+      const notContacted = Math.max(0, assignedCount - contactedAssignedCount);
+
+      // Contact Rate = Actually Contacted Prospects ÷ Assigned Prospects × 100
+      const contactRate = assignedCount > 0
+        ? Number(((contactedAssignedCount / assignedCount) * 100).toFixed(1))
+        : (actuallyContacted > 0 ? 100 : 0);
+
+      // 4. Calls Classification
+      const totalCalls = periodCalls.length;
+      const successfulCalls = periodCalls.filter(
         c => c.is_confirmed_contact === true ||
              ['أكد التعامل مع DROVA', 'مهتم', 'موافق مبدئيًا', 'طلب معلومات', 'طلب الاتصال لاحقًا', 'تم الاتصال'].includes(c.call_result)
-      );
-      const unconfirmedCalls = memberCalls.filter(
-        c => c.is_confirmed_contact === false ||
-             ['لم يرد', 'الرقم مشغول', 'الرقم غير متاح', 'رقم خاطئ', 'رفض'].includes(c.call_result)
-      );
-      const noAnswerCalls = memberCalls.filter(c => c.call_result === 'لم يرد');
-      const callbackCalls = memberCalls.filter(c => c.call_result === 'طلب الاتصال لاحقًا');
+      ).length;
 
-      const confirmationRate = memberCalls.length > 0
-        ? Number(((confirmedCalls.length / memberCalls.length) * 100).toFixed(1))
-        : 0;
+      const unansweredCalls = periodCalls.filter(c => c.call_result === 'لم يرد').length;
+      const busyCalls = periodCalls.filter(c => c.call_result === 'الرقم مشغول' || c.call_result === 'الرقم غير متاح').length;
+      const wrongNumberCalls = periodCalls.filter(c => c.call_result === 'رقم خاطئ').length;
+      const callbackCount = periodCalls.filter(c => c.call_result === 'طلب الاتصال لاحقًا').length;
 
-      const interested = assignedProspects.filter(
+      const interestedCount = assignedProspects.filter(
         p => p.status === 'مهتم' || p.status === 'مهتم - متابعة' || p.expediteur_status === 'مهتم' || p.expediteur_status === 'مرشح قوي'
       ).length;
 
-      const confirmed = assignedProspects.filter(
+      const notInterestedCount = periodCalls.filter(c => c.call_result === 'رفض' || c.call_result === 'غير مهتم').length;
+
+      const confirmedCount = assignedProspects.filter(
         p => p.status === 'أكد التعامل مع DROVA' || p.expediteur_status === 'مؤكد'
       ).length;
 
-      const activated = this.expediteurs.filter(
-        e => (e.assigned_commercial === member.name || e.commercial_id === member.id) && (e.status === 'مفعل' || e.lifecycle_status === 'مفعل')
+      const onboardingCount = assignedProspects.filter(
+        p => p.status === 'في طور التفعيل' || p.expediteur_status === 'مرشح قوي' || (p.expediteur_status && ['مؤكد', 'مفعل'].includes(p.expediteur_status))
       ).length;
 
-      const active = this.expediteurs.filter(
-        e => (e.assigned_commercial === member.name || e.commercial_id === member.id) && (e.status === 'نشط' || e.lifecycle_status === 'نشط')
+      const expediteursCount = this.expediteurs.filter(
+        e => (e.assigned_commercial === member.name || e.commercial_id === member.id)
       ).length;
 
-      const conversionRate = assignedProspects.length > 0
-        ? Number(((confirmed + activated + active) / assignedProspects.length * 100).toFixed(1))
+      const activeMerchantsCount = this.expediteurs.filter(
+        e => (e.assigned_commercial === member.name || e.commercial_id === member.id) &&
+             (e.status === 'نشط' || e.status === 'مفعل' || e.lifecycle_status === 'نشط' || e.lifecycle_status === 'مفعل')
+      ).length;
+
+      // 5. Follow-ups
+      const memberFollowUps = this.crmFollowUps.filter(
+        f => f.commercial_name === member.name || (f as any).commercial_id === member.id
+      );
+
+      const followUpsCompleted = memberFollowUps.filter(f => f.status === 'completed').length;
+      const followUpsOverdue = memberFollowUps.filter(
+        f => f.status !== 'completed' && f.status !== 'cancelled' && f.scheduled_date < todayStr
+      ).length;
+      const followUpsPending = memberFollowUps.filter(
+        f => f.status === 'pending' || f.status === 'rescheduled'
+      ).length;
+
+      // 6. Rates
+      const successfulContactRate = totalCalls > 0
+        ? Number(((successfulCalls / totalCalls) * 100).toFixed(1))
         : 0;
 
+      const baseDenominator = Math.max(1, actuallyContacted);
+      const interestedRate = Number(((interestedCount / baseDenominator) * 100).toFixed(1));
+      const confirmedRate = Number(((confirmedCount / baseDenominator) * 100).toFixed(1));
+      const onboardingRate = Number(((onboardingCount / baseDenominator) * 100).toFixed(1));
+      const expediteurConversionRate = Number(((expediteursCount / baseDenominator) * 100).toFixed(1));
+      const activeMerchantConversionRate = Number(((activeMerchantsCount / baseDenominator) * 100).toFixed(1));
+
+      const totalFollowUpsActionable = followUpsCompleted + followUpsOverdue;
+      const followUpCompletionRate = totalFollowUpsActionable > 0
+        ? Number(((followUpsCompleted / totalFollowUpsActionable) * 100).toFixed(1))
+        : 100;
+
+      // 7. Configurable Performance Score Calculation (0 - 100)
+      const callVelocityBonus = Math.min(100, (totalCalls / Math.max(1, period === 'today' ? 15 : period === 'week' ? 60 : 150)) * 100);
+      const contactActivityScore = Number(((contactRate * 0.7 + callVelocityBonus * 0.3) * (weights.contactActivity / 100)).toFixed(1));
+
+      const successfulContactsScore = Number((successfulContactRate * (weights.successfulContacts / 100)).toFixed(1));
+
+      const confirmedRatio = Math.min(100, (confirmedCount / Math.max(1, baseDenominator * 0.2)) * 100);
+      const confirmedMerchantsScore = Number((confirmedRatio * (weights.confirmedMerchants / 100)).toFixed(1));
+
+      const expediteurRatio = Math.min(100, expediteurConversionRate * 2.5);
+      const expediteurConversionScore = Number((expediteurRatio * (weights.expediteurConversion / 100)).toFixed(1));
+
+      const followUpCompletionScore = Number((followUpCompletionRate * (weights.followUpCompletion / 100)).toFixed(1));
+
+      const callsWithNotes = periodCalls.filter(c => c.notes && c.notes.trim().length >= 8).length;
+      const notesRatio = totalCalls > 0 ? (callsWithNotes / totalCalls) * 100 : 100;
+      const overduePenalty = Math.min(40, followUpsOverdue * 10);
+      const qualityBase = Math.max(0, notesRatio - overduePenalty);
+      const dataQualityScore = Number((qualityBase * (weights.dataQualityDiscipline / 100)).toFixed(1));
+
+      const rawTotalScore = contactActivityScore + successfulContactsScore + confirmedMerchantsScore +
+                            expediteurConversionScore + followUpCompletionScore + dataQualityScore;
+      const score = Math.min(100, Math.max(0, Number(rawTotalScore.toFixed(1))));
+
+      let rank: 'A+' | 'A' | 'B' | 'C' | 'D' = 'C';
+      let rankTitle = 'يحتاج لمتابعة وتحسين';
+      if (score >= 85) {
+        rank = 'A+';
+        rankTitle = 'أداء استثنائي متفوق (Top Performer)';
+      } else if (score >= 70) {
+        rank = 'A';
+        rankTitle = 'أداء ممتاز ومتقدم (High Achiever)';
+      } else if (score >= 50) {
+        rank = 'B';
+        rankTitle = 'أداء منتظم وجيد (Reliable Performer)';
+      } else if (score >= 35) {
+        rank = 'C';
+        rankTitle = 'يحتاج لمتابعة وتحسين (Needs Coaching)';
+      } else {
+        rank = 'D';
+        rankTitle = 'دون المستوى المستهدف (Underperforming)';
+      }
+
       return {
+        userId: member.id,
         name: member.name,
-        assigned: assignedProspects.length,
-        calls: memberCalls.length,
-        confirmed: confirmedCalls.length,
-        unconfirmed: unconfirmedCalls.length,
-        noAnswer: noAnswerCalls.length,
-        callbacks: callbackCalls.length,
-        confirmationRate,
-        interested,
-        activated,
-        active,
-        conversionRate,
+        username: member.username,
+        role: member.role,
+        phone: member.phone,
+        assigned: assignedCount,
+        contacted: actuallyContacted,
+        notContacted,
+        totalCalls,
+        successfulCalls,
+        unansweredCalls,
+        busyCalls,
+        wrongNumberCalls,
+        interestedCount,
+        notInterestedCount,
+        callbackCount,
+        confirmedCount,
+        onboardingCount,
+        expediteursCount,
+        activeMerchantsCount,
+        manuallyAddedCount,
+        followUpsTotal: memberFollowUps.length,
+        followUpsCompleted,
+        followUpsOverdue,
+        followUpsPending,
+        contactRate,
+        successfulContactRate,
+        interestedRate,
+        confirmedRate,
+        onboardingRate,
+        expediteurConversionRate,
+        activeMerchantConversionRate,
+        followUpCompletionRate,
+        score,
+        rank,
+        rankTitle,
+        scoreBreakdown: {
+          contactActivityScore,
+          successfulContactsScore,
+          confirmedMerchantsScore,
+          expediteurConversionScore,
+          followUpCompletionScore,
+          dataQualityScore,
+        },
+        period,
       };
-    });
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  public getCommercialUserPerformance(
+    userIdOrUsername?: string,
+    period: 'today' | 'week' | 'month' | 'all' | 'custom' = 'today',
+    customRange?: { from: string; to: string }
+  ): CommercialPerformanceReport {
+    const reports = this.getCommercialPerformanceReports(period, customRange);
+    const target = (userIdOrUsername || this.userSession.username || this.userSession.name).toLowerCase();
+    const found = reports.find(
+      r => r.userId === userIdOrUsername ||
+           r.username.toLowerCase() === target ||
+           r.name.toLowerCase() === target
+    );
+    if (found) return found;
+
+    return reports[0] || {
+      userId: 'usr_default',
+      name: this.userSession.name,
+      username: this.userSession.username,
+      role: 'commercial',
+      assigned: 0,
+      contacted: 0,
+      notContacted: 0,
+      totalCalls: 0,
+      successfulCalls: 0,
+      unansweredCalls: 0,
+      busyCalls: 0,
+      wrongNumberCalls: 0,
+      interestedCount: 0,
+      notInterestedCount: 0,
+      callbackCount: 0,
+      confirmedCount: 0,
+      onboardingCount: 0,
+      expediteursCount: 0,
+      activeMerchantsCount: 0,
+      manuallyAddedCount: 0,
+      followUpsTotal: 0,
+      followUpsCompleted: 0,
+      followUpsOverdue: 0,
+      followUpsPending: 0,
+      contactRate: 0,
+      successfulContactRate: 0,
+      interestedRate: 0,
+      confirmedRate: 0,
+      onboardingRate: 0,
+      expediteurConversionRate: 0,
+      activeMerchantConversionRate: 0,
+      followUpCompletionRate: 100,
+      score: 0,
+      rank: 'C',
+      rankTitle: 'لا توجد نشاطات مسجلة بعد',
+      scoreBreakdown: {
+        contactActivityScore: 0,
+        successfulContactsScore: 0,
+        confirmedMerchantsScore: 0,
+        expediteurConversionScore: 0,
+        followUpCompletionScore: 0,
+        dataQualityScore: 0,
+      },
+      period,
+    };
   }
 
   // --- Authentication & User Management (Sections 2, 3, 4, 5, 7) ---
@@ -1541,59 +2324,135 @@ class StorageManager {
   }
 
   public async login(username: string, password: string): Promise<{ success: boolean; message?: string; session?: UserSession }> {
-    const user = this.userAccounts.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-    if (!user) {
-      return { success: false, message: 'اسم المستخدم غير موجود في سجل الموظفين' };
-    }
-    if (user.status === 'disabled') {
-      return { success: false, message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express' };
+    const cleanUser = username.trim().toLowerCase();
+
+    // 1. Instant check against local team accounts (zero-latency, immediate for accounts created in this browser/admin)
+    const localUser = this.userAccounts.find(u => u.username.toLowerCase() === cleanUser);
+    if (localUser) {
+      if (localUser.status === 'disabled') {
+        return { success: false, message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express' };
+      }
+
+      const valid = await verifyPassword(password, localUser.password_hash, localUser.salt);
+      const isSuperAdminFallback = localUser.username === 'cherouik' && (password === 'admin123@' || password === 'cherouik123@');
+
+      if (valid || isSuperAdminFallback) {
+        localUser.last_login = new Date().toISOString();
+        this.userSession = {
+          user_id: localUser.id,
+          name: localUser.full_name,
+          username: localUser.username,
+          role: localUser.role,
+          email: localUser.email || `${localUser.username}@drova-express.dz`,
+          phone: localUser.phone,
+        };
+        this.authenticated = true;
+        localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(this.userSession));
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `drova_tok_${localUser.id}_${Date.now()}`);
+
+        this.addAuditLog({
+          action: 'User Login',
+          details: `تسجيل دخول ناجح للمستخدم ${localUser.full_name} دور: ${localUser.role}`,
+        });
+
+        // Ensure user document is in central Firestore in background so other devices and PCs receive it
+        firestoreService.saveUser(localUser).catch(() => {});
+
+        this.saveToStorage();
+        this.initFirestoreSync();
+        return { success: true, session: { ...this.userSession } };
+      }
     }
 
-    // Verify salted cryptographic password
-    const valid = await verifyPassword(password, user.password_hash, user.salt);
-    const isTestPass = (
-      (user.username === 'cherouik' && (password === 'admin123@' || password === 'cherouik123@' || password === 'admin')) ||
-      (user.username === 'mouradkarmoula' && (password === 'mourad123@' || password === 'mourad')) ||
-      (user.username === 'amine_b' && password === 'amine123@') ||
-      (user.username === 'karim_k' && password === 'karim123@') ||
-      (user.username === 'reda_mkt' && password === 'reda123@') ||
-      (user.username === 'zineb_v' && password === 'zineb123@')
-    );
+    // 2. Central Firestore login (for accounts created from other PCs or first time on this browser)
+    try {
+      const authRes = await authService.login(username, password);
+      if (authRes.success && authRes.session) {
+        this.userSession = authRes.session;
+        this.authenticated = true;
+        localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(this.userSession));
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `drova_fb_${authRes.session.user_id}`);
+        this.initFirestoreSync();
 
-    if (!valid && !isTestPass) {
+        if (authRes.account) {
+          const idx = this.userAccounts.findIndex(u => u.username.toLowerCase() === authRes.account!.username.toLowerCase());
+          if (idx >= 0) this.userAccounts[idx] = authRes.account;
+          else this.userAccounts.push(authRes.account);
+        }
+
+        this.addAuditLog({
+          action: 'User Login',
+          details: `تسجيل دخول ناجح للمستخدم ${this.userSession.name} دور: ${this.userSession.role}`,
+        });
+
+        if (this.userSession.role === 'super_admin' && this.prospects.length > 0) {
+          this.syncInitialDataToFirestore().catch(() => {});
+        }
+
+        this.saveToStorage();
+        return { success: true, session: { ...this.userSession } };
+      }
+
+      // If remote auth explicitly returned an incorrect password or disabled account, pass that through
+      if (authRes.message && !authRes.message.includes('تعذر الاتصال') && !authRes.message.includes('فشل الاتصال')) {
+        return { success: false, message: authRes.message };
+      }
+    } catch (e) {
+      console.warn('Firebase login attempt fallback to local:', e);
+    }
+
+    // 3. Fallback: If local user existed but password check failed above
+    if (localUser) {
       return { success: false, message: 'كلمة المرور غير صحيحة، يرجى التحقق والمحاولة مجدداً' };
     }
 
-    // Update last login
-    user.last_login = new Date().toISOString();
-    this.userSession = {
-      user_id: user.id,
-      name: user.full_name,
-      username: user.username,
-      role: user.role,
-      email: user.email || `${user.username}@drova-express.dz`,
-      phone: user.phone,
+    return {
+      success: false,
+      message: 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم وكلمة المرور.'
     };
-    this.authenticated = true;
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `drova_tok_${user.id}_${Date.now()}`);
+  }
 
-    this.addAuditLog({
-      action: 'User Login',
-      user: user.full_name,
-      details: `تسجيل دخول ناجح للمستخدم ${user.full_name} دور: ${user.role}`,
-    });
+  public async loginWithGoogle(): Promise<{ success: boolean; message?: string; session?: UserSession }> {
+    try {
+      const authRes = await authService.loginWithGoogle();
+      if (authRes.success && authRes.session) {
+        this.userSession = authRes.session;
+        this.authenticated = true;
+        localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(this.userSession));
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `drova_fb_${authRes.session.user_id}`);
+        this.initFirestoreSync();
 
-    this.saveToStorage();
-    return { success: true, session: { ...this.userSession } };
+        if (authRes.account) {
+          const idx = this.userAccounts.findIndex(u => u.username === authRes.account!.username);
+          if (idx >= 0) this.userAccounts[idx] = authRes.account;
+          else this.userAccounts.push(authRes.account);
+        }
+
+        this.addAuditLog({
+          action: 'User Google Login',
+          details: `تسجيل دخول ناجح عبر Google للمستخدم ${this.userSession.name} دور: ${this.userSession.role}`,
+        });
+
+        if (this.userSession.role === 'super_admin' && this.prospects.length > 0) {
+          this.syncInitialDataToFirestore().catch(() => {});
+        }
+
+        this.saveToStorage();
+        return { success: true, session: { ...this.userSession } };
+      }
+      return { success: false, message: authRes.message || 'فشل تسجيل الدخول عبر Google' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'حدث خطأ غير متوقع أثناء تسجيل الدخول عبر Google' };
+    }
   }
 
   public logout(): void {
     const prevUser = this.userSession.name;
     this.authenticated = false;
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    authService.logout().catch(() => {});
     this.addAuditLog({
       action: 'User Logout',
-      user: prevUser,
       details: `تسجيل خروج للمستخدم ${prevUser}`,
     });
     this.saveToStorage();
@@ -1628,7 +2487,7 @@ class StorageManager {
       salt,
       role: data.role,
       phone: data.phone?.trim(),
-      email: data.email?.trim() || `${cleanUser}@drova-express.dz`,
+      email: data.email?.trim() || `${cleanUser}@drova-crm.internal`,
       status: 'active',
       created_at: new Date().toISOString(),
       created_by: this.userSession.name,
@@ -1663,6 +2522,14 @@ class StorageManager {
     });
 
     this.saveToStorage();
+
+    // Persist to central Firestore users collection for immediate multi-PC access
+    try {
+      await firestoreService.saveUser(newAcc);
+    } catch (fsErr) {
+      console.warn('Firestore saveUser notice:', fsErr);
+    }
+
     return { success: true, account: newAcc };
   }
 
@@ -1695,6 +2562,15 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.updateUser(id, {
+      fullName: user.full_name,
+      role: user.role.toUpperCase(),
+      status: user.status,
+      phone: user.phone || '',
+      email: user.email,
+      ...(user.password_hash ? { password_hash: user.password_hash, salt: user.salt } : {})
+    }).catch(() => {});
+
     return { success: true };
   }
 
@@ -1724,6 +2600,7 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.deleteUser(id).catch(() => {});
     return { success: true };
   }
 
@@ -1744,6 +2621,11 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.updateUser(id, {
+      password_hash: hash,
+      salt: salt
+    }).catch(() => {});
+
     return { success: true };
   }
 
@@ -1776,6 +2658,7 @@ class StorageManager {
     });
 
     this.saveToStorage();
+    firestoreService.saveFeedback(newFb).catch(() => {});
   }
 
   public reviewCommercialFeedback(id: string, approved: boolean, reviewedBy: string): void {
@@ -1830,6 +2713,7 @@ class StorageManager {
     };
     this.notifications.unshift(notif);
     this.saveToStorage();
+    firestoreService.saveNotification(notif).catch(() => {});
   }
 
   public markNotificationRead(id: string): void {
@@ -1837,6 +2721,7 @@ class StorageManager {
     if (n) {
       n.read = true;
       this.saveToStorage();
+      firestoreService.updateNotification(id, { read: true } as any).catch(() => {});
     }
   }
 
@@ -2003,7 +2888,7 @@ class StorageManager {
     return [...this.auditLogs];
   }
 
-  private addAuditLog(entry: Omit<AuditLog, 'id' | 'user' | 'timestamp'>) {
+  public addAuditLog(entry: Omit<AuditLog, 'id' | 'user' | 'timestamp'>) {
     const newLog: AuditLog = {
       ...entry,
       id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -2011,6 +2896,7 @@ class StorageManager {
       timestamp: new Date().toISOString(),
     };
     this.auditLogs = [newLog, ...this.auditLogs.slice(0, 199)];
+    firestoreService.recordAuditLog(newLog).catch(() => {});
   }
 
   // --- Settings ---

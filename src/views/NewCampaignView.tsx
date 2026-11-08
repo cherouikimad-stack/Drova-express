@@ -1,6 +1,6 @@
 /**
  * DROVA "New Prospecting Campaign" View (Section 4 & 28)
- * Full 58 Wilayas, modular sources, 22 categories, and strict quality configuration
+ * Full 69 Wilayas, modular sources, 22 categories, and strict quality configuration
  */
 import React, { useState } from 'react';
 import {
@@ -38,7 +38,7 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
 
   // Campaign Settings
   const [campaignName, setCampaignName] = useState('حملة استكشاف تجار الأغواط للشحن السريع');
-  const [targetNumber, setTargetNumber] = useState<number>(50);
+  const [targetNumber, setTargetNumber] = useState<number>(1000);
 
   // Modular Sources Selection (Section 4)
   const [selectedSources, setSelectedSources] = useState<SourceType[]>([
@@ -144,6 +144,28 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
         </button>
       </div>
 
+      {/* Real Data & Anti-Fake Guarantee Banner */}
+      <div className="p-4 bg-[#141824] border border-blue-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="space-y-1">
+          <div className="font-bold text-blue-200 flex items-center gap-1.5">
+            <span className="text-emerald-400">🛡️</span>
+            <span>محرك الاستكشاف الآلي الحقيقي (Real Merchant Discovery Engine)</span>
+          </div>
+          <p className="text-[11px] text-blue-300/80">
+            النظام يبحث آلياً عن تجار حقيقيين في الجزائر عبر مصادر Meta Ads وGoogle Places والويب. لا توجد أي بيانات وهمية أو أرقام افتراضية.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => onNavigate('import')}
+            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold transition-colors"
+          >
+            📥 استيراد ملف Excel
+          </button>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Campaign Identity & Target */}
         <div className="bg-[#141414] border border-[#262626] p-5 space-y-4">
@@ -166,24 +188,40 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
             </div>
 
             <div>
-              <label className="text-[#8E8E93] block mb-1">العدد المستهدف (Target Number):</label>
+              <label className="text-[#8E8E93] block mb-1">العدد المستهدف من التجار (Target Merchants):</label>
               <input
                 type="number"
-                min={5}
-                max={500}
+                min={1}
+                max={500000}
                 required
                 value={targetNumber}
-                onChange={e => setTargetNumber(parseInt(e.target.value) || 50)}
+                onChange={e => setTargetNumber(parseInt(e.target.value) || 1)}
                 className="w-full bg-[#1A1A1A] border border-[#333333] px-3 py-2 text-white font-mono-data text-xs outline-none focus:border-[#FF0000]"
               />
-              <span className="text-[10px] text-[#545458] block mt-1">
-                الجودة أولاً: لن يتم اصطناع بيانات وهمية للوصول للرقم
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[500, 1000, 2500, 5000, 10000, 50000].map(val => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setTargetNumber(val)}
+                    className={`px-2.5 py-1 text-xs font-mono-data transition-colors border ${
+                      targetNumber === val
+                        ? 'bg-[#FF0000] text-white border-[#FF0000] font-bold'
+                        : 'bg-[#1C1C1C] text-[#8E8E93] border-[#333333] hover:text-white'
+                    }`}
+                  >
+                    {val >= 1000 ? `${(val / 1000).toLocaleString('ar-DZ')} ألف تاجر` : `${val} تاجر`}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-emerald-400 font-semibold block mt-1.5">
+                ✓ مفتوح بالكامل: يدعم إدخال أي رقم (1,000 أو 5,000 أو 10,000 أو 100,000 تاجر) دون أي تقييد.
               </span>
             </div>
           </div>
         </div>
 
-        {/* Section 2: Geographic Scope (58 Wilayas) */}
+        {/* Section 2: Geographic Scope (69 Wilayas) */}
         <div className="bg-[#141414] border border-[#262626] p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -212,7 +250,7 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
                 onClick={() => setWilayaMode('all')}
                 className={`px-3 py-1 ${wilayaMode === 'all' ? 'bg-[#FF0000] text-white font-bold' : 'text-[#8E8E93] hover:text-white'}`}
               >
-                الـ 58 ولاية كاملة
+                الـ 69 ولاية كاملة
               </button>
             </div>
           </div>
@@ -294,7 +332,7 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
             <div className="p-3 bg-[#1C1616] border border-[#441C1C] text-xs text-neutral-300 flex items-start gap-2">
               <Info size={16} className="text-[#FF0000] shrink-0 mt-0.5" />
               <span>
-                سيتم فحص الأنشطة التجارية على مستوى كافة الولايات الـ 58 بالترتيب، مع احترام محددات معدل الطلبات والتأكد من تحديد مقر النشاط الفعلي لا وجهة التوصيل.
+                سيتم فحص الأنشطة التجارية على مستوى كافة الولايات الـ 69 بالترتيب، مع احترام محددات معدل الطلبات والتأكد من تحديد مقر النشاط الفعلي لا وجهة التوصيل.
               </span>
             </div>
           )}
@@ -353,7 +391,7 @@ export const NewCampaignView: React.FC<NewCampaignViewProps> = ({
               { id: 'tiktok' as const, name: 'حسابات تيك توك التجارية', desc: 'TikTok Commercial Profiles' },
               { id: 'ouedkniss' as const, name: 'متاجر واد كنيس المجمعة', desc: 'Ouedkniss Pro Stores & Listings' },
               { id: 'pages_jaunes' as const, name: 'الصفحات الصفراء الجزائرية', desc: 'Pages Jaunes Algérie' },
-              { id: 'annuaires_dz' as const, name: 'دليل الشركات 58 ولاية', desc: 'AnnuairesDZ (58W Master)' },
+              { id: 'annuaires_dz' as const, name: 'دليل الشركات 69 ولاية', desc: 'AnnuairesDZ (69W Master)' },
               { id: 'el_mouchir' as const, name: 'دليل المشير / CACI', desc: 'El Mouchir / الغرف التجارية' },
               { id: 'kompass' as const, name: 'كومباس الجزائر للأعمال B2B', desc: 'Kompass Algeria Commercial' },
               { id: 'generic_directory' as const, name: 'محركات الأدلة المخصصة', desc: 'Configurable Generic Directories' },

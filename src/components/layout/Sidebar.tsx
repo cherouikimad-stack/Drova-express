@@ -28,7 +28,8 @@ import {
   Headphones,
   CheckCircle2,
   ShieldCheck,
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 import { storage } from '../../services/storage';
 import { i18n } from '../../services/i18n';
@@ -67,6 +68,8 @@ interface SidebarProps {
   overdueFollowUpsCount?: number;
   expediteursCount?: number;
   onLogout?: () => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -78,6 +81,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   overdueFollowUpsCount = 0,
   expediteursCount = 0,
   onLogout,
+  isOpenMobile = false,
+  onCloseMobile,
 }) => {
   const [session, setSession] = React.useState(() => storage.getUserSession());
   const [, setLangTick] = React.useState(0);
@@ -185,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     icon: React.ReactNode;
   }[] = [
     { id: 'graph', label: i18n.t('nav.graph') || 'التقاطع الشبكي وتوحيد الكيان', icon: <Share2 size={17} /> },
-    { id: 'wilayas', label: i18n.t('nav.wilayas') || 'تغطية الولايات الـ 58', icon: <MapPin size={17} /> },
+    { id: 'wilayas', label: i18n.t('nav.wilayas') || 'تغطية الولايات الـ 69', icon: <MapPin size={17} /> },
     { id: 'sources', label: i18n.t('nav.sources') || 'محركات استكشاف المصادر', icon: <Radio size={17} /> },
     { id: 'statistics', label: i18n.t('nav.statistics') || 'التحليلات والمؤشرات', icon: <BarChart3 size={17} /> },
   ];
@@ -219,7 +224,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return (
           <button
             key={item.id}
-            onClick={() => onNavigate(item.id)}
+            onClick={() => {
+              onNavigate(item.id);
+              if (onCloseMobile) onCloseMobile();
+            }}
             className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
               isActive
                 ? 'bg-[#1C1C1C] text-white border-r-2 border-[#FF0000]'
@@ -244,24 +252,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 
   return (
-    <aside className="w-64 bg-[#0C0C0C] border-l border-[#262626] flex flex-col shrink-0 min-h-screen select-none">
-      {/* Brand Header */}
-      <div className="p-4 border-b border-[#262626] flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#FF0000] text-white flex items-center justify-center font-black tracking-wider text-sm font-latin shadow-lg shadow-red-950/40">
-            D
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-latin font-extrabold text-white text-base tracking-tight">DROVA</span>
-              <span className="text-xs font-latin text-[#FF0000] font-semibold tracking-wider">EXPRESS</span>
+    <>
+      {/* Mobile Drawer Backdrop */}
+      {isOpenMobile && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed lg:static inset-y-0 z-50 w-72 lg:w-64 bg-[#0C0C0C] border-l border-[#262626] flex flex-col shrink-0 min-h-screen select-none transition-transform duration-300 ease-in-out ${
+          isOpenMobile
+            ? 'translate-x-0 shadow-2xl'
+            : '-translate-x-full lg:translate-x-0 rtl:translate-x-full lg:rtl:translate-x-0'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="p-4 border-b border-[#262626] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="DROVA Express"
+                className="h-7 w-auto object-contain drop-shadow-sm"
+              />
             </div>
-            <p className="text-[10px] text-[#8E8E93] leading-none mt-0.5">
-              {i18n.t('header.app_subtitle') || 'منصة استخبارات التجار و CRM'}
-            </p>
+            <div>
+              <div className="flex items-center gap-1.5 leading-none">
+                <span className="font-latin font-extrabold text-white text-sm tracking-tight">DROVA</span>
+                <span className="text-[11px] font-latin text-[#FF0000] font-bold tracking-wider">EXPRESS</span>
+              </div>
+              <p className="text-[9px] text-[#8E8E93] leading-none mt-1">
+                {i18n.t('header.app_subtitle') || 'منصة استخبارات التجار و CRM'}
+              </p>
+            </div>
           </div>
+
+          {/* Close Button on Mobile */}
+          {onCloseMobile && (
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="lg:hidden p-1.5 text-[#8E8E93] hover:text-white bg-[#181818] hover:bg-[#262626] border border-[#2E2E2E] rounded transition-colors cursor-pointer"
+              title="إغلاق القائمة"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
-      </div>
 
       {/* Navigation Links with Role-based filtering */}
       <nav className="flex-1 px-2 py-2 space-y-2 overflow-y-auto">
@@ -287,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {renderNavGroup('قاعدة البيانات', [
               { id: 'dashboard', label: 'لوحة القيادة', icon: <LayoutDashboard size={17} /> },
               { id: 'prospects', label: 'قاعدة التجار', icon: <Users size={17} /> },
-              { id: 'wilayas', label: 'تغطية الولايات الـ 58', icon: <MapPin size={17} /> },
+              { id: 'wilayas', label: 'تغطية الولايات الـ 69', icon: <MapPin size={17} /> },
               { id: 'statistics', label: 'التحليلات والمؤشرات', icon: <BarChart3 size={17} /> },
               { id: 'exports', label: 'تصدير التقارير', icon: <Download size={17} /> },
             ])}
@@ -335,5 +375,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
     </aside>
+  </>
   );
 };

@@ -1,0 +1,23 @@
+# Netlify Production Configuration for DROVA Express CRM
+[build]
+  publish = "dist"
+  command = "npm run build"
+  functions = "netlify/functions"
+
+# Route /api/discovery calls to serverless Netlify function
+[[redirects]]
+  from = "/api/discovery/*"
+  to = "/.netlify/functions/discovery/:splat"
+  status = 200
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"

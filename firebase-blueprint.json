@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user account with role-based access control",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Auth UID" },
+        "username": { "type": "string", "description": "Internal username" },
+        "fullName": { "type": "string", "description": "Full name of staff member" },
+        "email": { "type": "string", "description": "Internal authentication email" },
+        "role": {
+          "type": "string",
+          "enum": ["SUPER_ADMIN", "ADMIN_MARKETING", "COMMERCIAL_MANAGER", "COMMERCIAL", "VIEWER"],
+          "description": "User permission role"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "disabled"],
+          "description": "Account status"
+        },
+        "phone": { "type": "string", "description": "Staff phone number" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "lastLogin": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "username", "fullName", "email", "role", "status"]
+    },
+    "Prospect": {
+      "title": "Prospect",
+      "description": "Algerian merchant prospect with parcel shipping potential",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique prospect ID" },
+        "name": { "type": "string", "description": "Commercial business name" },
+        "phone": { "type": "string", "description": "Normalized Algerian phone +213" },
+        "wilaya": { "type": "string", "description": "Wilaya name" },
+        "wilaya_code": { "type": "string", "description": "Official 2-digit code" },
+        "commune": { "type": "string", "description": "Commune name" },
+        "address": { "type": "string", "description": "Physical address" },
+        "product": { "type": "string", "description": "Product category" },
+        "score": {
+          "type": "string",
+          "enum": ["A+", "A", "B", "C"],
+          "description": "Lead score grade"
+        },
+        "status": { "type": "string", "description": "Pipeline status" },
+        "assigned_commercial": { "type": "string", "description": "Commercial representative name" },
+        "assigned_commercial_id": { "type": "string", "description": "Commercial UID" },
+        "current_courier": { "type": "string", "description": "Current competitor delivery company" },
+        "parcel_estimate": { "type": "string", "description": "Daily parcel volume estimate" },
+        "call_priority": { "type": "string", "enum": ["URGENT", "NORMAL", "LOW"] },
+        "confidence": { "type": "number", "description": "Verification confidence score" },
+        "created_at": { "type": "string", "description": "Creation timestamp" },
+        "updated_at": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["id", "name", "phone", "wilaya", "status"]
+    },
+    "Call": {
+      "title": "Call",
+      "description": "Commercial phone call record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Call record ID" },
+        "prospect_id": { "type": "string", "description": "Prospect ID" },
+        "commercial_id": { "type": "string", "description": "Commercial user UID" },
+        "commercial_name": { "type": "string", "description": "Commercial user display name" },
+        "call_result": { "type": "string", "description": "Outcome of call" },
+        "is_confirmed_contact": { "type": "boolean", "description": "Whether merchant actually answered" },
+        "non_conversion_reason": { "type": "string", "description": "Reason if rejected/not interested" },
+        "competitor_name": { "type": "string", "description": "Identified competitor courier" },
+        "notes": { "type": "string", "description": "Detailed call notes" },
+        "date": { "type": "string", "description": "Call date" },
+        "time": { "type": "string", "description": "Call time" },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "prospect_id", "commercial_name", "call_result", "is_confirmed_contact"]
+    },
+    "FollowUp": {
+      "title": "FollowUp",
+      "description": "Scheduled callback or follow-up with merchant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Follow-up ID" },
+        "prospect_id": { "type": "string", "description": "Prospect ID" },
+        "prospect_name": { "type": "string", "description": "Merchant business name" },
+        "commercial_name": { "type": "string", "description": "Commercial assigned" },
+        "commercial_id": { "type": "string", "description": "Commercial UID" },
+        "scheduled_date": { "type": "string", "description": "Scheduled date" },
+        "scheduled_time": { "type": "string", "description": "Scheduled time" },
+        "reason": { "type": "string", "description": "Follow-up objective" },
+        "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "prospect_id", "scheduled_date", "status"]
+    },
+    "Expediteur": {
+      "title": "Expediteur",
+      "description": "Active or onboarded DROVA parcel shipper account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Shipper ID" },
+        "prospect_id": { "type": "string", "description": "Linked prospect ID" },
+        "business_name": { "type": "string", "description": "Official company name" },
+        "phone": { "type": "string", "description": "Verified telephone" },
+        "wilaya": { "type": "string", "description": "Base wilaya" },
+        "commercial_status": { "type": "string", "description": "Commercial lifecycle status" },
+        "lifecycle_status": { "type": "string", "description": "Operational activity status" },
+        "assigned_commercial": { "type": "string", "description": "Responsible sales rep" },
+        "assigned_commercial_id": { "type": "string", "description": "Responsible sales rep UID" },
+        "shipments_count": { "type": "number", "description": "Total shipped packages" },
+        "created_at": { "type": "string", "description": "Onboarding date" }
+      },
+      "required": ["id", "business_name", "phone", "wilaya", "commercial_status"]
+    },
+    "CommercialFeedback": {
+      "title": "CommercialFeedback",
+      "description": "Field intelligence report from commercial to marketing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Feedback ID" },
+        "prospect_id": { "type": "string", "description": "Target prospect ID" },
+        "prospect_name": { "type": "string", "description": "Target business name" },
+        "commercial_id": { "type": "string", "description": "Reporter UID" },
+        "commercial_name": { "type": "string", "description": "Reporter name" },
+        "category": { "type": "string", "description": "Category of feedback" },
+        "reported_value": { "type": "string", "description": "Reported value/correction" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "prospect_id", "commercial_name", "category", "reported_value", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app alert or notification item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Notification ID" },
+        "recipient_role": { "type": "string", "description": "Target role or 'all'" },
+        "recipient_user_id": { "type": "string", "description": "Target user UID" },
+        "title": { "type": "string", "description": "Title" },
+        "message": { "type": "string", "description": "Notification message" },
+        "type": { "type": "string", "enum": ["urgent", "warning", "info", "success"] },
+        "link_view": { "type": "string", "description": "Target app view" },
+        "read": { "type": "boolean", "description": "Read state" },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "title", "message", "type", "read"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and operational event log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Audit ID" },
+        "user": { "type": "string", "description": "Actor user display name" },
+        "user_id": { "type": "string", "description": "Actor UID" },
+        "action": { "type": "string", "description": "Event action name" },
+        "details": { "type": "string", "description": "Description of action" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "action", "timestamp"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Central system scoring weights and quality configurations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID" },
+        "minVerificationLevel": { "type": "string" },
+        "phoneMandatory": { "type": "boolean" },
+        "reviewThreshold": { "type": "number" },
+        "weights": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "phoneMandatory", "reviewThreshold"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of authorized staff user profiles"
+    },
+    "/prospects/{prospectId}": {
+      "schema": { "$ref": "#/entities/Prospect" },
+      "description": "Central master database of verified and discovered merchant prospects"
+    },
+    "/calls/{callId}": {
+      "schema": { "$ref": "#/entities/Call" },
+      "description": "Commercial phone call logs"
+    },
+    "/followUps/{followUpId}": {
+      "schema": { "$ref": "#/entities/FollowUp" },
+      "description": "Scheduled commercial follow-up reminders"
+    },
+    "/expediteurs/{expediteurId}": {
+      "schema": { "$ref": "#/entities/Expediteur" },
+      "description": "DROVA active shippers records"
+    },
+    "/commercialFeedbacks/{feedbackId}": {
+      "schema": { "$ref": "#/entities/CommercialFeedback" },
+      "description": "Commercial to marketing corrections and alerts"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Real-time system notifications and alerts"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable audit trails for administrative and security verification"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Global application rules and algorithm weights"
+    }
+  }
+}

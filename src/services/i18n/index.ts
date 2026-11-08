@@ -41,7 +41,7 @@ export const translations = {
     'nav.commercial_queue': 'جاهز للمتابعة (Commercial)',
     'nav.commercial_performance': 'أداء الفريق وعائد القنوات ROI',
     'nav.graph': 'التقاطع الشبكي وتوحيد الكيان',
-    'nav.wilayas': 'تغطية الولايات الـ 58',
+    'nav.wilayas': 'تغطية الولايات الـ 69',
     'nav.sources': 'محركات المصادر العامة',
     'nav.statistics': 'الإحصائيات والتحليلات',
     'nav.import': 'استيراد ودمج البيانات',
@@ -72,7 +72,7 @@ export const translations = {
 
     // Dashboard
     'dashboard.title': 'لوحة القيادة والمؤشرات العامة',
-    'dashboard.subtitle': 'نظرة شمولية على قاعدة التجار المؤهلين والشاحنين المعتمدين عبر 58 ولاية',
+    'dashboard.subtitle': 'نظرة شمولية على قاعدة التجار المؤهلين والشاحنين المعتمدين عبر 69 ولاية',
     'dashboard.total_discovered': 'إجمالي التجار المستكشفين',
     'dashboard.unique_merchants': 'كيانات تجارية موحدة',
     'dashboard.verified': 'تجار موثقون رسمياً',
@@ -155,7 +155,7 @@ export const translations = {
     'nav.commercial_queue': 'Prêt pour Relance (Queue)',
     'nav.commercial_performance': 'Performance Équipe & ROI',
     'nav.graph': 'Graphe des Entités Réseau',
-    'nav.wilayas': 'Couverture des 58 Wilayas',
+    'nav.wilayas': 'Couverture des 69 Wilayas',
     'nav.sources': 'Moteurs de Sources Publiques',
     'nav.statistics': 'Statistiques & Analyses',
     'nav.import': 'Import & Fusion Données',
@@ -186,7 +186,7 @@ export const translations = {
 
     // Dashboard
     'dashboard.title': 'Tableau de Bord Exécutif',
-    'dashboard.subtitle': 'Vue d\'ensemble des marchands qualifiés et des expéditeurs actifs sur 58 Wilayas',
+    'dashboard.subtitle': 'Vue d\'ensemble des marchands qualifiés et des expéditeurs actifs sur 69 Wilayas',
     'dashboard.total_discovered': 'Total Marchands Découverts',
     'dashboard.unique_merchants': 'Entités Unifiées',
     'dashboard.verified': 'Marchands Vérifiés',
@@ -269,7 +269,7 @@ export const translations = {
     'nav.commercial_queue': 'Ready for Follow-up Queue',
     'nav.commercial_performance': 'Commercial Team Performance & ROI',
     'nav.graph': 'Entity Cross-Graph Resolution',
-    'nav.wilayas': '58 Wilayas Coverage',
+    'nav.wilayas': '69 Wilayas Coverage',
     'nav.sources': 'Public Source Connectors',
     'nav.statistics': 'Analytics & Reporting',
     'nav.import': 'Excel Database Import',

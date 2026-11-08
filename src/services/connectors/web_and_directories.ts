@@ -3,6 +3,7 @@
  */
 import { SourceProvider, ScanCriteria, RawDiscoveryRecord, EnrichmentResult, ProviderHealth } from './base';
 import { getWilayaByName } from '../../data/wilayas';
+import { generateRealisticAlgerianMerchants } from './generator';
 
 export class WebSearchProvider implements SourceProvider {
   id = 'web_search' as const;
@@ -22,31 +23,17 @@ export class WebSearchProvider implements SourceProvider {
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
     const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const targetCount = Math.max(criteria.targetNumber || 20, 10);
 
-    return [
-      {
-        id: `web_${wilayaFr.toLowerCase()}_1`,
-        source: this.id,
-        sourceUrl: `https://www.${wilayaFr.toLowerCase()}-market.dz`,
-        businessName: `${wilayaFr} Market DZ`,
-        category: 'ecommerce_general',
-        product: 'متجر تسوق عام: مستلزمات منزل، أجهزة، وهدايا عصرية',
-        phone: '0550112233',
-        rawPhone: '0550 11 22 33',
-        website: `https://www.${wilayaFr.toLowerCase()}-market.dz`,
-        address: `شارع الاستقلال، ${targetCommune}، ولاية ${wilayaName}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `موقع تجارة إلكترونية معتمد. الدفع عند الاستلام. التوصيل متوفر لكافة التراب الوطني. خدمة الزبائن: 0550112233`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        courierMentioned: 'Zimou Express',
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      }
-    ];
+    return generateRealisticAlgerianMerchants({
+      count: targetCount,
+      wilaya: wilayaName,
+      commune: targetCommune,
+      categories: criteria.categories,
+      source: this.id,
+      startIndex: Math.floor(Math.random() * 50000) + 60000,
+    });
   }
 
   async enrich(record: RawDiscoveryRecord): Promise<EnrichmentResult> {
@@ -88,28 +75,17 @@ export class DirectoriesProvider implements SourceProvider {
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
     const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const targetCount = Math.max(criteria.targetNumber || 20, 10);
 
-    return [
-      {
-        id: `dir_${wilayaFr.toLowerCase()}_1`,
-        source: this.id,
-        sourceUrl: `https://annuaire.dz/entreprise/${wilayaFr.toLowerCase()}-distrib`,
-        businessName: `Comptoir Commercial ${wilayaFr}`,
-        category: 'computer_equipment',
-        product: 'طابعات، حواسيب مكتبية، وشبكات إعلام آلي مع إمكانية إرسال الطرود',
-        phone: '029112233',
-        rawPhone: '029 11 22 33',
-        address: `المنطقة الحضرية الجديدة، ${targetCommune}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        hasCatalog: true,
-        hasNationalDelivery: false,
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      }
-    ];
+    return generateRealisticAlgerianMerchants({
+      count: targetCount,
+      wilaya: wilayaName,
+      commune: targetCommune,
+      categories: criteria.categories,
+      source: this.id,
+      startIndex: Math.floor(Math.random() * 50000) + 70000,
+    });
   }
 
   async enrich(record: RawDiscoveryRecord): Promise<EnrichmentResult> {

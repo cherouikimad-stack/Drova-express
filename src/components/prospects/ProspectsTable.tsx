@@ -16,7 +16,8 @@ import {
   Square,
   RefreshCw,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sparkles
 } from 'lucide-react';
 import { Prospect, LeadScore, ProspectStatus, WhatsAppStatus } from '../../types';
 import { ALGERIA_WILAYAS } from '../../data/wilayas';
@@ -24,6 +25,7 @@ import { MERCHANT_CATEGORIES } from '../../data/categories';
 import { ScoreBadge, VerificationBadge, StatusBadge, WhatsAppBadge } from '../ui/Badge';
 import { exportToExcel, exportToCSV } from '../../services/excel';
 import { storage } from '../../services/storage';
+import { BatchAssignmentModal } from '../crm/BatchAssignmentModal';
 
 interface ProspectsTableProps {
   prospects: Prospect[];
@@ -45,9 +47,11 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
   const [selectedWhatsApp, setSelectedWhatsApp] = useState<string>('all');
   const [selectedCourier, setSelectedCourier] = useState('all');
   const [selectedVerification, setSelectedVerification] = useState('all');
+  const [selectedOrigin, setSelectedOrigin] = useState<string>('all');
 
   // Row selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   // Unique couriers present in database
   const availableCouriers = useMemo(() => {
@@ -109,6 +113,15 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
         return false;
       }
 
+      // Origin filter (Real vs Simulated)
+      if (selectedOrigin === 'real_only') {
+        const isReal = p.data_origin === 'real_imported' || p.data_origin === 'real_manual' || p.source === 'excel_import';
+        if (!isReal) return false;
+      } else if (selectedOrigin === 'simulated_only') {
+        const isReal = p.data_origin === 'real_imported' || p.data_origin === 'real_manual' || p.source === 'excel_import';
+        if (isReal) return false;
+      }
+
       return true;
     });
   }, [
@@ -121,6 +134,7 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
     selectedWhatsApp,
     selectedCourier,
     selectedVerification,
+    selectedOrigin,
   ]);
 
   // Selection handlers
@@ -185,6 +199,7 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
     setSelectedWhatsApp('all');
     setSelectedCourier('all');
     setSelectedVerification('all');
+    setSelectedOrigin('all');
   };
 
   const hasActiveFilters =
@@ -195,7 +210,8 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
     selectedStatus !== 'all' ||
     selectedWhatsApp !== 'all' ||
     selectedCourier !== 'all' ||
-    selectedVerification !== 'all';
+    selectedVerification !== 'all' ||
+    selectedOrigin !== 'all';
 
   return (
     <div className="bg-[#121212] border border-[#262626] flex flex-col min-h-0">
@@ -229,6 +245,14 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
                 <span className="font-mono-data text-white font-medium">
                   {selectedIds.size} محدد
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-red-950 to-[#2A1616] hover:from-red-900 hover:to-[#381818] border border-[#FF0000]/60 text-white font-bold text-[11px] shadow-sm transition-all"
+                >
+                  <Sparkles size={12} className="text-[#FF0000]" />
+                  <span>توزيع المحدد على المندوبين ({selectedIds.size})</span>
+                </button>
                 <select
                   onChange={e => {
                     if (e.target.value) handleBulkStatusChange(e.target.value as ProspectStatus);
@@ -281,7 +305,7 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
             onChange={e => setSelectedWilaya(e.target.value)}
             className="bg-[#181818] border border-[#333333] text-[#EDEDED] px-2 py-1 text-xs outline-none"
           >
-            <option value="all">كل الولايات (58)</option>
+            <option value="all">كل الولايات (69)</option>
             {ALGERIA_WILAYAS.map(w => (
               <option key={w.code} value={w.nameAr}>
                 {w.code} - {w.nameAr}
@@ -358,6 +382,17 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
                 {c}
               </option>
             ))}
+          </select>
+
+          {/* Origin Filter */}
+          <select
+            value={selectedOrigin}
+            onChange={e => setSelectedOrigin(e.target.value)}
+            className="bg-[#181818] border border-[#333333] text-[#EDEDED] px-2 py-1 text-xs outline-none font-medium"
+          >
+            <option value="all">نوع السجل: الكل</option>
+            <option value="real_only">🟢 تجار حقيقيون موثقون</option>
+            <option value="simulated_only">🟡 محاكاة تجريبية</option>
           </select>
 
           {/* Reset Filters */}
@@ -448,8 +483,22 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
 
                     {/* الاسم / الصفحة */}
                     <td className="p-3">
-                      <div className="font-semibold text-white truncate max-w-[200px]" title={p.name}>
-                        {p.name}
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-white truncate max-w-[180px]" title={p.name}>
+                          {p.name}
+                        </span>
+                        {p.page_url && (
+                          <a
+                            href={p.page_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="text-[#8E8E93] hover:text-[#FF0000] transition-colors p-0.5"
+                            title="فتح رابط المتجر / الصفحة الحقيقية"
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
                       </div>
                       <div className="text-[10px] text-[#8E8E93] truncate max-w-[200px] flex items-center gap-1 mt-0.5">
                         <span className="truncate">{p.page_url ? p.page_url.replace(/^https?:\/\//, '') : p.source}</span>
@@ -480,8 +529,22 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
                     </td>
 
                     {/* الهاتف */}
-                    <td className="p-3 font-mono-data text-emerald-400 font-semibold whitespace-nowrap">
-                      {p.phone}
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono-data text-emerald-400 font-semibold">{p.phone}</span>
+                        {p.phone && (
+                          <a
+                            href={`https://wa.me/${p.phone.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="p-1 text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/60 rounded transition-colors"
+                            title="اختبار الرقم وفتح محادثة واتساب للتأكد"
+                          >
+                            <MessageCircle size={13} />
+                          </a>
+                        )}
+                      </div>
                     </td>
 
                     {/* واتساب؟ */}
@@ -514,9 +577,20 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
                       <ScoreBadge score={p.score} />
                     </td>
 
-                    {/* Verification */}
+                    {/* Verification & Data Origin */}
                     <td className="p-3 whitespace-nowrap">
-                      <VerificationBadge level={p.verification_status} />
+                      <div className="flex flex-col gap-1">
+                        <VerificationBadge level={p.verification_status} />
+                        {(p.data_origin === 'real_imported' || p.data_origin === 'real_manual' || p.source === 'excel_import') ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 w-fit">
+                            ● حقيقي موثق
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium bg-amber-950/60 border border-amber-800/40 text-amber-400 w-fit">
+                            ○ محاكاة اختبارية
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Actions */}
@@ -559,6 +633,16 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
           مطابق لمعايير الامتثال والجودة المعتمدة في DROVA Express
         </div>
       </div>
+
+      <BatchAssignmentModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onSuccess={() => {
+          setSelectedIds(new Set());
+          onRefresh();
+        }}
+        selectedProspectIds={Array.from(selectedIds)}
+      />
     </div>
   );
 };

@@ -14,6 +14,7 @@ export interface ScanCriteria {
 
 export interface RawDiscoveryRecord {
   id: string;
+  googlePlaceId?: string;
   source: SourceType | string;
   sourceUrl: string;
   businessName: string;
@@ -23,6 +24,8 @@ export interface RawDiscoveryRecord {
   rawPhone?: string;
   website?: string;
   address?: string;
+  location?: { latitude?: number; longitude?: number };
+  types?: string[];
   wilaya: string;
   commune: string;
   rawText?: string;

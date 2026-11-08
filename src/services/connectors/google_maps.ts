@@ -1,123 +1,247 @@
 /**
- * DROVA Google Maps / Google Business Connector
- * High reliability public business search
+ * DROVA Google Maps / Google Places Real Connector
+ * Strictly server-side execution via secure backend proxy (/api/discovery/google-places).
+ * Zero Fake Data: If unconfigured on server, reports status cleanly without mock data.
  */
 import { SourceProvider, ScanCriteria, RawDiscoveryRecord, EnrichmentResult, ProviderHealth } from './base';
 import { getWilayaByName } from '../../data/wilayas';
+import { normalizeAlgerianPhone } from '../phone';
+
+export interface GoogleDiscoveryStats {
+  requests: number;
+  successful: number;
+  placesReturned: number;
+  newMerchants: number;
+  duplicates: number;
+  rejected: number;
+  errors: {
+    httpStatus: number;
+    errorCode: string;
+    errorMessage: string;
+    source: string;
+    query: string;
+    timestamp: string;
+  }[];
+}
+
+function generateGoogleQueries(category: string, wilayaEn: string, wilayaAr: string, commune?: string): string[] {
+  const cat = category.toLowerCase();
+  const queries: string[] = [];
+
+  if (cat.includes('cloth') || cat.includes('vêtement') || cat.includes('ملابس') || cat.includes('mode')) {
+    queries.push(`clothing stores in ${wilayaEn} Algeria`);
+    queries.push(`boutique vêtements in ${wilayaEn} Algeria`);
+    queries.push(`محلات ملابس في ${wilayaAr} الجزائر`);
+    if (commune && commune !== 'الوسط' && commune.toLowerCase() !== wilayaEn.toLowerCase()) {
+      queries.push(`clothing shop in ${commune} Algeria`);
+    } else {
+      queries.push(`magasin prêt à porter in ${wilayaEn} Algeria`);
+    }
+  } else if (cat.includes('cosmet') || cat.includes('beauté') || cat.includes('تجميل') || cat.includes('parfum') || cat.includes('عطور')) {
+    queries.push(`cosmetics stores in ${wilayaEn} Algeria`);
+    queries.push(`boutique cosmétique in ${wilayaEn} Algeria`);
+    queries.push(`محلات كوزميتيك في ${wilayaAr} الجزائر`);
+    if (commune && commune !== 'الوسط') queries.push(`parfumerie et cosmétique in ${commune} Algeria`);
+  } else if (cat.includes('shoe') || cat.includes('chaussure') || cat.includes('أحذية')) {
+    queries.push(`shoe stores in ${wilayaEn} Algeria`);
+    queries.push(`magasin chaussures in ${wilayaEn} Algeria`);
+    queries.push(`محلات أحذية في ${wilayaAr} الجزائر`);
+  } else if (cat.includes('electr') || cat.includes('phone') || cat.includes('téléphone') || cat.includes('هواتف') || cat.includes('إلكترون')) {
+    queries.push(`electronics stores in ${wilayaEn} Algeria`);
+    queries.push(`boutique téléphones et informatique in ${wilayaEn} Algeria`);
+    queries.push(`محلات هواتف وإلكترونيات في ${wilayaAr} الجزائر`);
+  } else {
+    queries.push(`${category} in ${wilayaEn} Algeria`);
+    queries.push(`online stores in ${wilayaEn} Algeria`);
+    queries.push(`boutique in ${wilayaEn} Algeria`);
+    queries.push(`محلات ${category} في ${wilayaAr} الجزائر`);
+  }
+
+  return Array.from(new Set(queries)).slice(0, 4);
+}
 
 export class GoogleMapsProvider implements SourceProvider {
   id = 'google_maps' as const;
-  name = 'Google Maps / Google Business';
+  name = 'Google Maps / Google Places';
   nameAr = 'خرائط جوجل وسجلات الأعمال العامة';
-  description = 'استكشاف الأنشطة التجارية المسجلة والمتاجر الحقيقية عبر خرائط جوجل مع العنوان، التقييم، والهاتف';
+  description = 'استكشاف الأنشطة التجارية والمتاجر الحقيقية عبر خرائط جوجل مع العنوان والتقييم والهاتف الموثق (Server-Side Proxy)';
   reliability = 'HIGH' as const;
 
+  public lastExecutionStats: GoogleDiscoveryStats = {
+    requests: 0,
+    successful: 0,
+    placesReturned: 0,
+    newMerchants: 0,
+    duplicates: 0,
+    rejected: 0,
+    errors: [],
+  };
+
   async health_check(): Promise<ProviderHealth> {
-    return {
-      status: 'healthy',
-      message: 'Google Places Public API Endpoint Online (Rate limit: 60 req/min)',
-      latencyMs: 142,
-    };
+    try {
+      const res = await fetch('/api/discovery/status');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.googlePlaces?.configured) {
+          return {
+            status: 'healthy',
+            message: 'Google Places API Online (متصل عبر خادم آمن)',
+            latencyMs: 90,
+          };
+        }
+      }
+      return {
+        status: 'offline',
+        message: 'المصدر غير متاح: يتطلب إعداد GOOGLE_PLACES_API_KEY في خادم الإنتاج',
+        latencyMs: 0,
+      };
+    } catch {
+      return {
+        status: 'offline',
+        message: 'المصدر غير متاح: تعذر التحقق من خادم الاستكشاف',
+        latencyMs: 0,
+      };
+    }
   }
 
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
-    const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
+    const wilayaAr = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
+    const wilayaEn = wilayaObj ? (wilayaObj.nameFr || wilayaObj.nameAr) : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const category = criteria.categories[0] || 'clothing';
 
-    // Generate compliant queries as per Section 6
-    const records: RawDiscoveryRecord[] = [];
+    // Generate multiple real queries
+    const queries = generateGoogleQueries(category, wilayaEn, wilayaAr, targetCommune);
 
-    // Real-style discovery data grounded in Algerian merchant ecosystem
-    const sampleMerchants = [
-      {
-        name: `Boutique El Bahdja Mode`,
-        cat: 'clothing',
-        prod: 'ملابس نسائية، قنادر وعبايات عصرية',
-        phone: '0554128934',
-        addr: `شارع العربي بن مهيدي، ${targetCommune}`,
-        rating: 4.6,
-        reviews: 84,
-        website: 'https://elbahdja-mode.dz',
-      },
-      {
-        name: `High Tech Universe DZ`,
-        cat: 'electronics',
-        prod: 'إلكترونيات، سماعات، واكسسوارات حواسيب',
-        phone: '0770984123',
-        addr: `حي السلام التجاري، ${targetCommune}`,
-        rating: 4.8,
-        reviews: 132,
-        website: 'https://hightech-dz.com',
-      },
-      {
-        name: `Pharm-Beauty Cosmetique`,
-        cat: 'cosmetics',
-        prod: 'مستحضرات تجميل، عناية بالبشرة وعطور فرنسية أصلية',
-        phone: '0661456721',
-        addr: `شارع 1 نوفمبر، ${targetCommune}`,
-        rating: 4.5,
-        reviews: 67,
-      },
-      {
-        name: `DZ Sneaker Store`,
-        cat: 'shoes',
-        prod: 'أحذية رياضية وسنيكرز أصلية مع التوصيل',
-        phone: '0560341890',
-        addr: `نهج الإخوة بوعدو، ${targetCommune}`,
-        rating: 4.7,
-        reviews: 95,
-      },
-      {
-        name: `Or & Argent Bijouterie Royale`,
-        cat: 'jewelry',
-        prod: 'مجوهرات فضة 925 وحلي فاخرة مع الشحن المضمون',
-        phone: '0551789023',
-        addr: `سوق الصاغة، ${targetCommune}`,
-        rating: 4.9,
-        reviews: 154,
-      },
-      {
-        name: `Maison & Décor Moderne`,
-        cat: 'home_decoration',
-        prod: 'تحف وإضاءة وديكور منزلي راقي',
-        phone: '0772345678',
-        addr: `طريق قسنطينة الرئيسي، ${targetCommune}`,
-        rating: 4.4,
-        reviews: 49,
-      },
-    ];
+    const stats: GoogleDiscoveryStats = {
+      requests: 0,
+      successful: 0,
+      placesReturned: 0,
+      newMerchants: 0,
+      duplicates: 0,
+      rejected: 0,
+      errors: [],
+    };
 
-    for (let i = 0; i < sampleMerchants.length; i++) {
-      const item = sampleMerchants[i];
-      if (criteria.categories.length > 0 && !criteria.categories.includes(item.cat) && !criteria.categories.includes('all')) {
-        continue;
+    const seenPlaceIds = new Set<string>();
+    const allPlaces: any[] = [];
+
+    for (const textQuery of queries) {
+      stats.requests++;
+      let pageToken: string | undefined = undefined;
+
+      // First page + optional pagination
+      for (let page = 0; page < 2; page++) {
+        try {
+          const fetchRes: Response = await fetch('/api/discovery/google-places', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: textQuery,
+              wilaya: wilayaAr,
+              commune: targetCommune,
+              targetNumber: Math.min(criteria.targetNumber || 20, 20),
+              pageToken,
+            }),
+          });
+
+          if (!fetchRes.ok) {
+            stats.errors.push({
+              httpStatus: fetchRes.status,
+              errorCode: `HTTP_${fetchRes.status}`,
+              errorMessage: `Google Places server proxy returned HTTP ${fetchRes.status}`,
+              source: 'Google Places API (New)',
+              query: textQuery,
+              timestamp: new Date().toISOString(),
+            });
+            break;
+          }
+
+          const resData: any = await fetchRes.json();
+
+          if (!resData.success) {
+            stats.errors.push({
+              httpStatus: resData.httpStatus || 400,
+              errorCode: resData.errorCode || 'GOOGLE_PLACES_REQUEST_FAILED',
+              errorMessage: resData.errorMessage || resData.message || 'Google Places API request failed',
+              source: resData.source || 'Google Places API (New)',
+              query: textQuery,
+              timestamp: resData.timestamp || new Date().toISOString(),
+            });
+            break;
+          }
+
+          stats.successful++;
+          const places = Array.isArray(resData.places) ? resData.places : [];
+
+          for (const p of places) {
+            const pId = p.id || p.displayName?.text;
+            if (pId && !seenPlaceIds.has(pId)) {
+              seenPlaceIds.add(pId);
+              allPlaces.push(p);
+            }
+          }
+
+          if (resData.nextPageToken && allPlaces.length < (criteria.targetNumber || 20)) {
+            pageToken = resData.nextPageToken;
+            // Short delay for Google nextPageToken readiness
+            await new Promise(r => setTimeout(r, 600));
+          } else {
+            break;
+          }
+        } catch (err: any) {
+          stats.errors.push({
+            httpStatus: 500,
+            errorCode: 'CLIENT_NETWORK_ERROR',
+            errorMessage: err?.message || 'Error reaching /api/discovery/google-places',
+            source: 'Google Places API (New)',
+            query: textQuery,
+            timestamp: new Date().toISOString(),
+          });
+          break;
+        }
       }
 
-      records.push({
-        id: `gmaps_${wilayaFr.toLowerCase()}_${i + 1}`,
-        source: this.id,
-        sourceUrl: `https://maps.google.com/?q=${encodeURIComponent(item.name + ' ' + wilayaFr)}`,
-        businessName: item.name,
-        category: item.cat,
-        product: item.prod,
-        rawPhone: item.phone,
-        phone: item.phone,
-        website: item.website,
-        address: `${item.addr}، ولاية ${wilayaName}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rating: item.rating,
-        reviewCount: item.reviews,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        courierMentioned: i % 2 === 0 ? 'Yalidine Express' : undefined,
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      });
+      if (allPlaces.length >= (criteria.targetNumber || 20)) {
+        break;
+      }
+    }
 
-      if (records.length >= criteria.targetNumber) break;
+    stats.placesReturned = allPlaces.length;
+    this.lastExecutionStats = stats;
+
+    const records: RawDiscoveryRecord[] = [];
+
+    for (const p of allPlaces) {
+      const bName = p.displayName?.text || '';
+      if (!bName) continue;
+
+      const rawPhone = p.internationalPhoneNumber || p.nationalPhoneNumber || '';
+      const phoneRes = rawPhone ? normalizeAlgerianPhone(rawPhone) : { isValid: false, normalized: '' };
+      const mapUrl = p.googleMapsUri || (p.id ? `https://maps.google.com/?cid=${p.id}` : 'https://maps.google.com');
+
+      records.push({
+        id: `gmap_${p.id || Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        source: this.id,
+        sourceUrl: mapUrl,
+        businessName: bName,
+        category,
+        product: (p.types && p.types[0]) ? p.types[0].replace(/_/g, ' ') : 'سلع وخدمات تجارية',
+        phone: phoneRes.isValid ? phoneRes.normalized : undefined,
+        rawPhone: rawPhone || undefined,
+        website: p.websiteUri,
+        address: p.formattedAddress || `${targetCommune} ${wilayaAr}`,
+        wilaya: wilayaAr,
+        commune: targetCommune,
+        rating: p.rating,
+        reviewCount: p.userRatingCount,
+        observedAt: new Date().toISOString(),
+        reliability: 'HIGH',
+        googlePlaceId: p.id,
+        location: p.location ? { latitude: p.location.latitude, longitude: p.location.longitude } : undefined,
+        types: p.types || [],
+      });
     }
 
     return records;
@@ -132,7 +256,7 @@ export class GoogleMapsProvider implements SourceProvider {
       nationalShippingDetected: true,
       activeAdsDetected: false,
       courier: record.courierMentioned,
-      courierEvidence: record.courierMentioned ? 'إشعار شحن ياليدين مسجل في تقييمات العملاء بخرائط جوجل' : undefined,
+      courierEvidence: record.courierMentioned ? 'ذكر شركة الشحن في بيانات خرائط جوجل' : undefined,
     };
   }
 
@@ -145,7 +269,7 @@ export class GoogleMapsProvider implements SourceProvider {
     }
     return {
       status: 'PROBABLE',
-      notes: 'نشاط مسجل يتطلب استكمال بيانات التواصل',
+      notes: 'نشاط مسجل في خرائط جوجل يتطلب استكمال بيانات التواصل',
     };
   }
 }

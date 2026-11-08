@@ -99,12 +99,17 @@ export class SourceRegistry {
     duplicatesFound: number;
     rejectedCount: number;
     evidenceList: SourceEvidence[];
+    googleStats?: any;
+    metaStatus?: any;
+    diagnosticErrors: any[];
   }> {
     const rawDiscovered: RawDiscoveryRecord[] = [];
     const activeProviders = selectedSources
       .filter(s => this.isSourceEnabled(s))
       .map(s => this.providers.get(s))
       .filter((p): p is SourceProvider => !!p);
+
+    const diagnosticErrors: any[] = [];
 
     // 1. PIPELINE A: RAW DISCOVERY
     onProgress?.('discovery_start', { activeSources: activeProviders.length });
@@ -113,8 +118,37 @@ export class SourceRegistry {
       try {
         const found = await provider.discover(criteria);
         rawDiscovered.push(...found);
-      } catch (err) {
+
+        // Capture provider-specific diagnostics
+        if (provider.id === 'google_maps' && (provider as any).lastExecutionStats) {
+          const gStats = (provider as any).lastExecutionStats;
+          if (gStats.errors && gStats.errors.length > 0) {
+            diagnosticErrors.push(...gStats.errors);
+          }
+        }
+        if (provider.id === 'meta_ads' && (provider as any).lastExecutionStatus) {
+          const mStatus = (provider as any).lastExecutionStatus;
+          if (mStatus.status === 'Error' || mStatus.status === 'Restricted') {
+            diagnosticErrors.push({
+              httpStatus: mStatus.httpStatus || 400,
+              errorCode: mStatus.errorCode || 'META_API_RESTRICTED',
+              errorMessage: mStatus.reason,
+              source: 'Meta Ad Library API',
+              query: criteria.categories[0] || 'vente en ligne',
+              timestamp: mStatus.timestamp || new Date().toISOString(),
+            });
+          }
+        }
+      } catch (err: any) {
         console.warn(`Provider ${provider.name} encountered error:`, err);
+        diagnosticErrors.push({
+          httpStatus: 500,
+          errorCode: 'PROVIDER_EXECUTION_ERROR',
+          errorMessage: err?.message || `Error in ${provider.name}`,
+          source: provider.name,
+          query: criteria.categories[0] || '',
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
@@ -155,25 +189,23 @@ export class SourceRegistry {
       // Check phone normalization
       const phoneRes = normalizeAlgerianPhone(phoneCandidate);
 
-      // Section 25: Do not lose partial data! If no phone yet, save to Missing Phone Pool
+      // Section 25: If no valid phone yet, save to Missing Phone Pool for secondary batch pass
+      // CRITICAL: NEVER discard the real place! Keep it in CRM as VERIFICATION_REQUIRED
       if (!phoneRes.isValid) {
-        if (criteria.phoneRequired) {
-          missingPhoneCandidates.push({
-            id: `miss_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            name: record.businessName,
-            source: record.source,
-            source_url: record.sourceUrl,
-            wilaya: record.wilaya,
-            commune: record.commune,
-            category: record.category,
-            product: record.product || 'منتجات عامة',
-            website: record.website,
-            retry_count: 0,
-            discovered_at: new Date().toISOString(),
-            notes: `تم حفظ النشاط في مجمع الأرقام المعلقة لجدولة الإثراء بالدفعة الثانية (المصدر: ${record.source})`,
-          });
-          continue;
-        }
+        missingPhoneCandidates.push({
+          id: `miss_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          name: record.businessName,
+          source: record.source,
+          source_url: record.sourceUrl,
+          wilaya: record.wilaya,
+          commune: record.commune,
+          category: record.category,
+          product: record.product || 'منتجات عامة',
+          website: record.website,
+          retry_count: 0,
+          discovered_at: new Date().toISOString(),
+          notes: `تم حفظ النشاط في مجمع الأرقام المعلقة لجدولة الإثراء بالدفعة الثانية (المصدر: ${record.source})`,
+        });
       }
 
       // Location Verification
@@ -203,13 +235,18 @@ export class SourceRegistry {
         continue;
       }
 
-      // Deduplication Check
+      // Deduplication Check following exact priority:
+      // 1. google_place_id, 2. normalized phone, 3. website, 4. name + address, 5. social URL
       const candidatePartial: Partial<Prospect> = {
         name: record.businessName,
-        phone: phoneRes.normalized,
+        phone: phoneRes.isValid ? phoneRes.normalized : '',
         page_url: record.sourceUrl,
+        website_url: record.website,
+        google_maps_url: record.source === 'google_maps' ? record.sourceUrl : undefined,
+        google_place_id: (record as any).googlePlaceId,
         commune: locRes.commune,
         wilaya: locRes.wilaya,
+        address: record.address,
         source_urls: [record.sourceUrl],
       };
 
@@ -231,38 +268,54 @@ export class SourceRegistry {
       const newProspect: Prospect = {
         id: newId,
         name: record.businessName,
+        business_name: record.businessName,
         page_name: record.businessName,
         merchant_type: enrichment.catalogDetected ? 'متجر إلكتروني' : 'متجر بيع وتوزيع',
         product: record.product || 'منتجات قابلة للشحن',
         category: record.category,
         wilaya: locRes.wilaya,
         commune: locRes.commune,
-        phone: phoneRes.normalized,
+        address: record.address || `${locRes.commune} ${locRes.wilaya}`,
+        phone: phoneRes.isValid ? phoneRes.normalized : '',
         whatsapp: waRes.status,
         email: enrichment.email || '',
         page_url: record.sourceUrl,
         source: record.source,
+        source_url: record.sourceUrl,
         source_urls: [record.sourceUrl, ...(record.website ? [record.website] : [])],
+        google_maps_url: record.source === 'google_maps' ? record.sourceUrl : undefined,
+        google_place_id: (record as any).googlePlaceId,
+        website_url: record.website,
         current_courier: courierRes.courier,
+        current_delivery_company: courierRes.courier,
         courier_evidence: courierRes.evidence,
         loyalty_level: courierRes.loyalty,
         parcel_estimate: scoring.parcelEstimate,
-        status: 'جديد',
+        status: phoneRes.isValid ? 'جاهز للاتصال' : 'جديد',
         contact_date: '',
         next_followup: '',
         responsible: '',
-        notes: '',
-        alert: locRes.isAmbiguous ? 'مراجعة الولاية' : '',
-        score: scoring.score,
-        score_reasons: scoring.reasons,
-        verification_status: phoneRes.isValid && locRes.level === 'VERIFIED' ? 'VERIFIED' : 'PROBABLE',
-        verification_notes: `توثيق عبر ${record.source}. هاتف جزائري معتمد (${phoneRes.carrier}).`,
+        notes: `تم الاكتشاف عبر ${record.source}`,
+        alert: !phoneRes.isValid ? 'يتطلب إثراء رقم الهاتف' : (locRes.isAmbiguous ? 'مراجعة الولاية' : ''),
+        score: phoneRes.isValid ? scoring.score : 'B',
+        score_reasons: phoneRes.isValid ? scoring.reasons : ['نشاط تجاري حقيقي مكتشف ينقصه رقم الهاتف'],
+        verification_status: phoneRes.isValid && locRes.level === 'VERIFIED' ? 'CONTACTABLE' : 'VERIFICATION_REQUIRED',
+        verification_notes: `توثيق عبر ${record.source}. ${phoneRes.isValid ? `هاتف جزائري معتمد (${phoneRes.carrier})` : 'بانتظار إثراء رقم الهاتف'}.`,
         phone_verification_status: phoneRes.level,
         business_location_verification: locRes.level,
         shipping_potential: scoring.shippingPotential,
+        source_date: now,
+        phone_verified: phoneRes.isValid,
+        phone_source: phoneRes.isValid ? record.sourceUrl : undefined,
+        whatsapp_verified: waRes.status === 'نعم',
+        whatsapp_source: waRes.status === 'نعم' ? record.sourceUrl : undefined,
+        data_origin: 'real_imported',
         created_at: now,
         updated_at: now,
       };
+
+      workingProspects.push(newProspect);
+      addedProspects.push(newProspect);
 
       // Add evidence records
       if (phoneRes.normalized) {
@@ -293,13 +346,13 @@ export class SourceRegistry {
         });
       }
 
-      addedProspects.push(newProspect);
-      workingProspects.push(newProspect);
-
       if (addedProspects.length >= criteria.targetNumber) {
         break;
       }
     }
+
+    const googleProvider = this.providers.get('google_maps') as any;
+    const metaProvider = this.providers.get('meta_ads') as any;
 
     return {
       addedProspects,
@@ -308,6 +361,9 @@ export class SourceRegistry {
       duplicatesFound,
       rejectedCount,
       evidenceList,
+      googleStats: googleProvider?.lastExecutionStats,
+      metaStatus: metaProvider?.lastExecutionStatus,
+      diagnosticErrors,
     };
   }
 }

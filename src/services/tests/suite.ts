@@ -4,7 +4,7 @@
  */
 import { normalizeAlgerianPhone } from '../phone';
 import { checkDuplicate, normalizeBusinessName } from '../deduplication';
-import { getWilayaByCode, getWilayaByName } from '../../data/wilayas';
+import { getWilayaByCode, getWilayaByName, ALGERIA_WILAYAS } from '../../data/wilayas';
 import { calculateLeadScore, detectWhatsApp, verifyBusinessLocation, detectCourierCompany } from '../intelligence';
 import { Prospect } from '../../types';
 
@@ -130,12 +130,38 @@ export function runAllTests(): TestResult[] {
     };
   });
 
-  runTest('Location Verification', 'Distinguish origin vs "Livraison 58 wilayas" without false Algiers attribution', () => {
-    const res = verifyBusinessLocation('الأغواط', 'أفلو', 'متجرنا في أفلو الأغواط، التوصيل متوفر 58 ولاية');
+  runTest('Location Verification', 'Distinguish origin vs "Livraison 69 wilayas" without false Algiers attribution', () => {
+    const res = verifyBusinessLocation('الأغواط', 'أفلو', 'متجرنا في أفلو الأغواط، التوصيل متوفر 69 ولاية');
     return {
       passed: res.level === 'VERIFIED' && res.wilaya === 'الأغواط',
       expected: 'VERIFIED: الأغواط',
       received: `${res.level}: ${res.wilaya}`,
+    };
+  });
+
+  runTest('69-Wilaya Organization', 'Verify official 69 Wilayas count', () => {
+    return {
+      passed: ALGERIA_WILAYAS.length === 69,
+      expected: '69 Wilayas',
+      received: `${ALGERIA_WILAYAS.length} Wilayas`,
+    };
+  });
+
+  runTest('69-Wilaya Organization', 'Verify promoted Wilaya 59 (Aflou / آفلو)', () => {
+    const w = getWilayaByCode('59');
+    return {
+      passed: w?.nameAr === 'آفلو' && w?.nameFr === 'Aflou',
+      expected: '59 - آفلو (Aflou)',
+      received: `${w?.code} - ${w?.nameAr} (${w?.nameFr})`,
+    };
+  });
+
+  runTest('69-Wilaya Organization', 'Verify promoted Wilaya 68 (Bou Saâda / بوسعادة)', () => {
+    const w = getWilayaByCode('68');
+    return {
+      passed: w?.nameAr === 'بوسعادة' && w?.nameFr === 'Bou Saada',
+      expected: '68 - بوسعادة (Bou Saada)',
+      received: `${w?.code} - ${w?.nameAr} (${w?.nameFr})`,
     };
   });
 

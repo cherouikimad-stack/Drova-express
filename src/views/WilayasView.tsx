@@ -1,5 +1,5 @@
 /**
- * DROVA 58 Algerian Wilayas Directory & Prospect Density Matrix (Section 28 & 29)
+ * DROVA 69 Algerian Wilayas Directory & Prospect Density Matrix (Section 28 & 29)
  */
 import React, { useState } from 'react';
 import { MapPin, Search, Plus, Users, Award, ExternalLink } from 'lucide-react';
@@ -43,7 +43,7 @@ export const WilayasView: React.FC<WilayasViewProps> = ({
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <MapPin size={20} className="text-[#FF0000]" />
-            <span>دليل الولايات الـ 58 (58 Algerian Wilayas Coverage)</span>
+            <span>دليل الولايات الـ 69 (69 Algerian Wilayas Coverage)</span>
           </h2>
           <p className="text-xs text-[#8E8E93] mt-1">
             كثافة وتغطية التجار عبر كافة الولايات الجزائرية، مع إمكانية بدء حملة تنقيب موجهة بضغطة زر

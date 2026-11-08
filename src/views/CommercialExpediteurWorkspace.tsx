@@ -365,7 +365,7 @@ export const CommercialExpediteurWorkspace: React.FC<CommercialExpediteurWorkspa
               onChange={e => setSelectedWilaya(e.target.value)}
               className="w-full bg-[#141414] border border-[#2E2E2E] px-2.5 py-1.5 text-xs text-white"
             >
-              <option value="all">كافة الولايات (58 ولاية)</option>
+              <option value="all">كافة الولايات (69 ولاية)</option>
               {Array.from(new Set(expediteurs.map(e => e.wilaya))).filter(Boolean).map(w => (
                 <option key={w} value={w}>{w}</option>
               ))}

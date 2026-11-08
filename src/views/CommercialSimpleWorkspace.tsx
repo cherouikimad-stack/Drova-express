@@ -11,7 +11,7 @@
  * - Suivis (Follow-up queue)
  * - Signaler une information (Feedback to Marketing)
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PhoneCall,
   CalendarCheck,
@@ -35,12 +35,19 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  TrendingUp,
+  Target,
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  UserPlus
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { i18n } from '../services/i18n';
 import { Prospect, ExpediteurProfile, CallResult, ProspectStatus, ReactivationCandidate } from '../types';
 import { CallModal } from '../components/crm/CallModal';
+import { AddMerchantManualModal } from '../components/AddMerchantManualModal';
 
 interface CommercialSimpleWorkspaceProps {
   onRefresh: () => void;
@@ -49,14 +56,29 @@ interface CommercialSimpleWorkspaceProps {
 export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps> = ({
   onRefresh,
 }) => {
-  const session = storage.getUserSession();
-  const prospects = storage.getProspects();
-  const expediteurs = storage.getExpediteurs();
-  const allCalls = storage.getAllCalls();
-  const allFollowUps = storage.getAllFollowUps();
-  const reactivationCandidates = storage.getReactivationCandidates();
+  const [session, setSession] = useState(() => storage.getUserSession());
+  const [prospects, setProspects] = useState<Prospect[]>(() => storage.getProspects());
+  const [expediteurs, setExpediteurs] = useState(() => storage.getExpediteurs());
+  const [allCalls, setAllCalls] = useState(() => storage.getAllCalls());
+  const [allFollowUps, setAllFollowUps] = useState(() => storage.getAllFollowUps());
+  const [reactivationCandidates, setReactivationCandidates] = useState(() => storage.getReactivationCandidates());
+  const [myPerformance, setMyPerformance] = useState(() => storage.getCommercialUserPerformance(session.username || session.name, 'all'));
 
-  const [activeTab, setActiveTab] = useState<'home' | 'prospects' | 'expediteurs' | 'reactivation' | 'calls' | 'followups' | 'profile'>('home');
+  useEffect(() => {
+    const unsub = storage.subscribe(() => {
+      const s = storage.getUserSession();
+      setSession(s);
+      setProspects(storage.getProspects());
+      setExpediteurs(storage.getExpediteurs());
+      setAllCalls(storage.getAllCalls());
+      setAllFollowUps(storage.getAllFollowUps());
+      setReactivationCandidates(storage.getReactivationCandidates());
+      setMyPerformance(storage.getCommercialUserPerformance(s.username || s.name, 'all'));
+    });
+    return () => unsub();
+  }, [session.username, session.name]);
+
+  const [activeTab, setActiveTab] = useState<'home' | 'prospects' | 'expediteurs' | 'reactivation' | 'calls' | 'followups' | 'performance' | 'profile'>('home');
 
   // Calling modal
   const [callingProspect, setCallingProspect] = useState<Prospect | null>(null);
@@ -65,18 +87,35 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
   const [showQueueRunner, setShowQueueRunner] = useState(false);
   const [queueIndex, setQueueIndex] = useState(0);
 
+  // Manual Merchant Entry Modal
+  const [showAddMerchantModal, setShowAddMerchantModal] = useState(false);
+
   // Feedback to marketing modal
   const [feedbackProspect, setFeedbackProspect] = useState<Prospect | null>(null);
-  const [feedbackCategory, setFeedbackCategory] = useState<'wrong_phone' | 'business_closed' | 'high_volume_vip' | 'general'>('wrong_phone');
+  const [feedbackCategory, setFeedbackCategory] = useState<'wrong_phone' | 'business_closed' | 'high_volume_vip' | 'other'>('wrong_phone');
   const [feedbackValue, setFeedbackValue] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
 
   // Filter only assigned to logged in commercial (unless management)
   const isElevated = session.role === 'super_admin' || session.role === 'commercial_manager';
 
-  const myProspects = prospects.filter(p =>
-    isElevated || p.assigned_commercial === session.name || p.responsible === session.name
-  );
+  const myProspects = prospects.filter(p => {
+    if (isElevated) return true;
+    const sName = (session.name || '').toLowerCase();
+    const sUser = (session.username || '').toLowerCase();
+    const sId = (session.user_id || '').toLowerCase();
+
+    const pAssigned = (p.assigned_commercial || '').toLowerCase();
+    const pResp = (p.responsible || '').toLowerCase();
+    const pAdded = (p.added_by || '').toLowerCase();
+    const pCreator = (p.creator_id || '').toLowerCase();
+
+    return (
+      (sName && (pAssigned === sName || pResp === sName || pAdded === sName)) ||
+      (sUser && (pAssigned === sUser || pResp === sUser || pAdded === sUser)) ||
+      (sId && (pCreator === sId || (p as any).assigned_commercial_id === sId))
+    );
+  });
 
   const myExpediteurs = expediteurs.filter(e =>
     isElevated || e.assigned_commercial === session.name || e.commercial_id === session.user_id
@@ -142,11 +181,14 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
     if (!feedbackProspect || !feedbackValue.trim()) return;
 
     storage.submitCommercialFeedback({
+      commercial_id: session.user_id || 'usr_commercial',
       commercial_name: session.name,
       prospect_id: feedbackProspect.id,
       prospect_name: feedbackProspect.name,
       category: feedbackCategory,
+      field_name: feedbackCategory === 'wrong_phone' ? 'phone' : 'general',
       reported_value: feedbackValue.trim(),
+      notes: feedbackValue.trim(),
     });
 
     setFeedbackSent(true);
@@ -181,14 +223,24 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
           </div>
         </div>
 
-        {/* Large Primary Action: COMMENCER LES APPELS (Section 6) */}
-        <button
-          onClick={handleStartQueue}
-          className="flex items-center gap-2.5 px-6 py-3 bg-[#FF0000] hover:bg-[#E00000] text-white text-sm font-black shadow-lg shadow-red-950/50 transition-all uppercase tracking-wider cursor-pointer"
-        >
-          <Play size={18} fill="currentColor" />
-          <span>{i18n.t('commercial.start_calls') || 'بدء الاتصالات الذكية (Top 20)'}</span>
-        </button>
+        {/* Primary Actions: Manual Entry & Call Queue */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setShowAddMerchantModal(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950/40 transition-all uppercase tracking-wider cursor-pointer"
+          >
+            <UserPlus size={16} />
+            <span>+ إضافة تاجر يدوياً</span>
+          </button>
+
+          <button
+            onClick={handleStartQueue}
+            className="flex items-center gap-2.5 px-5 py-3 bg-[#FF0000] hover:bg-[#E00000] text-white text-xs font-black shadow-lg shadow-red-950/50 transition-all uppercase tracking-wider cursor-pointer"
+          >
+            <Play size={16} fill="currentColor" />
+            <span>{i18n.t('commercial.start_calls') || 'بدء الاتصالات الذكية (Top 20)'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Commercial Workspace Navigation Tabs */}
@@ -200,6 +252,7 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
           { id: 'reactivation', label: `إعادة التفعيل (${reactivationCandidates.length})` },
           { id: 'followups', label: `${i18n.t('commercial.followups') || 'المتابعات'} (${myFollowUps.length})` },
           { id: 'calls', label: `${i18n.t('commercial.calls') || 'المكالمات'} (${myCalls.length})` },
+          { id: 'performance', label: `تقييم أدائي (${myPerformance.score} نقطة)` },
           { id: 'profile', label: i18n.t('commercial.profile') || 'الملف' },
         ].map(t => (
           <button
@@ -219,6 +272,38 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
       {/* TAB 1: HOME */}
       {activeTab === 'home' && (
         <div className="space-y-6">
+          {/* Real Commercial Performance Banner */}
+          <div className="p-4 bg-gradient-to-r from-[#181818] via-[#1C1616] to-[#181818] border border-red-950/70 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-red-950/70 border border-[#FF0000]/40 flex flex-col items-center justify-center shrink-0">
+                <span className="text-xl font-black font-mono text-[#FF0000] leading-none">{myPerformance.score}</span>
+                <span className="text-[10px] text-neutral-300 font-bold mt-0.5">{myPerformance.rank}</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <Award size={16} className="text-[#FF0000]" />
+                    <span>معدل الأداء الفعلي (Call Activity Scoring)</span>
+                  </h4>
+                  <span className="text-[11px] font-mono px-2 py-0.5 bg-[#262626] text-neutral-300">
+                    التقييم: {myPerformance.rank} ({myPerformance.rankTitle})
+                  </span>
+                </div>
+                <p className="text-xs text-[#8E8E93] mt-1">
+                  نسبة الاتصال الفعلي: <span className="text-emerald-400 font-bold font-mono">{myPerformance.contactRate}%</span> ({myPerformance.contacted} تم الاتصال من أصل {myPerformance.assigned} معين) · <span className="text-red-400 font-mono font-bold">{myPerformance.notContacted}</span> تاجر لم يتم الاتصال بهم إطلاقاً.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('performance')}
+              className="px-4 py-2 bg-[#222222] hover:bg-[#2A2A2A] text-white border border-[#333333] hover:border-red-900 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+            >
+              <span>تقرير أدائي الكامل</span>
+              <ChevronLeft size={14} />
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="p-4 bg-[#141414] border border-red-900/50 space-y-1">
               <span className="text-xs text-[#8E8E93] block">{i18n.t('commercial.today_calls_due') || 'اتصالات مستحقة اليوم'}</span>
@@ -317,9 +402,24 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
       {activeTab === 'prospects' && (
         <div className="space-y-4">
           <div className="bg-[#141414] border border-[#262626] p-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
-              قائمة التجار الموجهة لي للاتصال ({myProspects.length})
-            </h3>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                  قائمة التجار الموجهة لي للاتصال ({myProspects.length})
+                </h3>
+                <p className="text-[11px] text-[#8E8E93] mt-0.5">
+                  تجار أضفتهم يدوياً: <span className="text-emerald-400 font-bold font-mono">{myPerformance.manuallyAddedCount || 0}</span> تاجر · إجمالي القائمة: <span className="text-white font-mono">{myProspects.length}</span>
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowAddMerchantModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
+              >
+                <UserPlus size={14} />
+                <span>+ إضافة تاجر يدوياً</span>
+              </button>
+            </div>
 
             <div className="divide-y divide-[#222222]">
               {myProspects.map(prospect => (
@@ -513,6 +613,264 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
         </div>
       )}
 
+      {/* TAB: COMMERCIAL PERFORMANCE & CALL ACTIVITY SCORING */}
+      {activeTab === 'performance' && (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-[#141414] border border-[#262626] p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#222222] pb-5">
+              <div className="flex items-center gap-4">
+                <div className={`w-16 h-16 flex flex-col items-center justify-center font-black font-mono border ${
+                  myPerformance.score >= 80 ? 'bg-emerald-950/60 border-emerald-500 text-emerald-400' :
+                  myPerformance.score >= 65 ? 'bg-blue-950/60 border-blue-500 text-blue-400' :
+                  myPerformance.score >= 50 ? 'bg-amber-950/60 border-amber-500 text-amber-400' :
+                  'bg-red-950/60 border-red-500 text-red-400'
+                }`}>
+                  <span className="text-2xl leading-none">{myPerformance.score}</span>
+                  <span className="text-[10px] mt-0.5">{myPerformance.rank}</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Award size={18} className="text-[#FF0000]" />
+                      <span>بطاقة تقييم الأداء التجاري — {myPerformance.name}</span>
+                    </h3>
+                    <span className="px-2 py-0.5 bg-[#222222] text-[#8E8E93] text-xs font-mono font-bold">
+                      التقييم: {myPerformance.rank} ({myPerformance.rankTitle})
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8E8E93] mt-1">
+                    تقييم آلي رسمي يستند حصراً إلى سجلات المكالمات الفعلية وتوثيق CRM لمنع احتساب التعيين كاتصال دون إجراء مكالمة حقيقية.
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-xs font-mono bg-[#181818] border border-[#2E2E2E] p-3 text-neutral-300 space-y-1">
+                <div>الحقيبة المعينة: <strong className="text-white">{myPerformance.assigned} تاجر</strong></div>
+                <div>تم الاتصال الفعلي: <strong className="text-emerald-400">{myPerformance.contacted} تاجر ({myPerformance.contactRate}%)</strong></div>
+                <div>لم يتم الاتصال: <strong className="text-red-400">{myPerformance.notContacted} تاجر</strong></div>
+              </div>
+            </div>
+
+            {/* 6-Factor Score Breakdown */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Target size={14} className="text-[#FF0000]" />
+                <span>المعايير المعتمدة في احتساب النقاط (100 نقطة)</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">1. نشاط الاتصال الفعلي (25%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.contactRate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, myPerformance.contactRate)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>تم الاتصال: <b className="text-white font-mono">{myPerformance.contacted}</b></span>
+                    <span>لم يتصل: <b className="text-red-400 font-mono">{myPerformance.notContacted}</b></span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">2. نجاح التواصل مع التاجر (20%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.successfulContactRate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, myPerformance.successfulContactRate)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>مكالمات ناجحة: <b className="text-white font-mono">{myPerformance.successfulCalls}</b></span>
+                    <span>إجمالي المحاولات: <b className="text-neutral-300 font-mono">{myPerformance.totalCalls}</b></span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">3. تأكيد التجار للخدمة (20%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.confirmedRate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, myPerformance.confirmedRate * 2.5)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>تجار مؤكدون: <b className="text-emerald-400 font-mono">{myPerformance.confirmedCount}</b></span>
+                    <span>مهتمون بالخدمة: <b className="text-neutral-300 font-mono">{myPerformance.interestedCount}</b></span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">4. التحويل إلى شاحن DROVA (15%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.expediteurConversionRate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-amber-500" style={{ width: `${Math.min(100, myPerformance.expediteurConversionRate * 3)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>شاحنون فعليون: <b className="text-white font-mono">{myPerformance.expediteursCount}</b></span>
+                    <span>شاحنون نشطون VIP: <b className="text-amber-400 font-mono">{myPerformance.activeMerchantsCount}</b></span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">5. الالتزام بالمتابعات (10%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.followUpCompletionRate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, myPerformance.followUpCompletionRate)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>مكتملة: <b className="text-white font-mono">{myPerformance.followUpsCompleted}</b></span>
+                    <span>متأخرة: <b className={`font-mono ${myPerformance.followUpsOverdue > 0 ? 'text-red-400 font-bold' : 'text-neutral-400'}`}>{myPerformance.followUpsOverdue}</b></span>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] border border-[#282828] p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">6. جودة التوثيق والـCRM (10%)</span>
+                    <span className="font-mono font-bold text-white">{myPerformance.scoreBreakdown.dataQualityScore}%</span>
+                  </div>
+                  <div className="h-1.5 bg-[#262626] overflow-hidden">
+                    <div className="h-full bg-rose-500" style={{ width: `${Math.min(100, myPerformance.scoreBreakdown.dataQualityScore * 10)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#8E8E93]">
+                    <span>نقاط الجودة: <b className="text-white font-mono">{myPerformance.scoreBreakdown.dataQualityScore} / 10</b></span>
+                    <span>إجمالي المكالمات: <b className="text-neutral-300 font-mono">{myPerformance.totalCalls}</b></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 9-Stage Commercial Pipeline Funnel */}
+          <div className="bg-[#141414] border border-[#262626] p-6 space-y-4">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp size={15} className="text-[#FF0000]" />
+              <span>مسار التحويل التجاري المتسلسل (9-Stage Conversion Funnel)</span>
+            </h4>
+            <p className="text-xs text-[#8E8E93]">
+              المعينون في الحقيبة لا يتحولون لمرحلة تواصل إلا بعد تسجيل مكالمة CRM فعلية.
+            </p>
+
+            <div className="grid grid-cols-3 md:grid-cols-9 gap-2 text-center text-xs">
+              <div className="p-3 bg-[#1A1A1A] border border-[#2E2E2E]">
+                <div className="text-[10px] text-[#8E8E93] mb-1">1. المعينون</div>
+                <div className="text-lg font-black font-mono text-white">{myPerformance.assigned}</div>
+                <div className="text-[9px] text-neutral-500">الحقيبة</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-red-900/40">
+                <div className="text-[10px] text-red-400 mb-1">2. لم يتصل</div>
+                <div className="text-lg font-black font-mono text-red-400">{myPerformance.notContacted}</div>
+                <div className="text-[9px] text-red-500">يحتاج مكالمة</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-[#2E2E2E]">
+                <div className="text-[10px] text-[#8E8E93] mb-1">3. محاولات</div>
+                <div className="text-lg font-black font-mono text-blue-400">{myPerformance.totalCalls}</div>
+                <div className="text-[9px] text-neutral-500">إجمالي الرنات</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-emerald-900/40">
+                <div className="text-[10px] text-emerald-400 mb-1">4. اتصال فعلي</div>
+                <div className="text-lg font-black font-mono text-emerald-400">{myPerformance.contacted}</div>
+                <div className="text-[9px] text-emerald-500 font-mono">{myPerformance.contactRate}%</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-[#2E2E2E]">
+                <div className="text-[10px] text-[#8E8E93] mb-1">5. مهتمون</div>
+                <div className="text-lg font-black font-mono text-cyan-400">{myPerformance.interestedCount}</div>
+                <div className="text-[9px] text-neutral-500">مرحلة التفاوض</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-purple-900/40">
+                <div className="text-[10px] text-purple-400 mb-1">6. مؤكدون</div>
+                <div className="text-lg font-black font-mono text-purple-400">{myPerformance.confirmedCount}</div>
+                <div className="text-[9px] text-purple-500">وافقوا على الشحن</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-[#2E2E2E]">
+                <div className="text-[10px] text-[#8E8E93] mb-1">7. قيد التهيئة</div>
+                <div className="text-lg font-black font-mono text-indigo-400">{myPerformance.onboardingCount}</div>
+                <div className="text-[9px] text-neutral-500">فتح الحساب</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-amber-900/40">
+                <div className="text-[10px] text-amber-400 mb-1">8. شاحن DROVA</div>
+                <div className="text-lg font-black font-mono text-amber-400">{myPerformance.expediteursCount}</div>
+                <div className="text-[9px] text-amber-500">أول شحنة</div>
+              </div>
+
+              <div className="p-3 bg-[#1A1A1A] border border-red-900/50">
+                <div className="text-[10px] text-[#FF0000] mb-1">9. نشط VIP</div>
+                <div className="text-lg font-black font-mono text-[#FF0000]">{myPerformance.activeMerchantsCount}</div>
+                <div className="text-[9px] text-neutral-500">شحن منتظم</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actionable Coaching Tips */}
+          <div className="bg-[#141414] border border-[#262626] p-6 space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Sparkles size={15} className="text-amber-400" />
+              <span>توجيهات ذكية لتحسين أدائك ورفع نقاطك (Actionable Coaching)</span>
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {myPerformance.notContacted > 0 && (
+                <div className="p-3 bg-red-950/30 border border-red-900/60 text-red-200 flex items-start gap-2.5">
+                  <AlertCircle size={16} className="text-[#FF0000] shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-white">لديك {myPerformance.notContacted} تاجر لم تتصل بهم أبداً</span>
+                    <span className="text-[11px] text-neutral-400">
+                      البدء بالاتصال بهؤلاء التجار سيرفع مباشرة نسبة Contact Rate وسيزيد نقاطك الإجمالية حتى 25 نقطة.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {myPerformance.followUpsOverdue > 0 && (
+                <div className="p-3 bg-amber-950/30 border border-amber-900/60 text-amber-200 flex items-start gap-2.5">
+                  <Clock size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-white">لديك {myPerformance.followUpsOverdue} مواعيد متابعة متأخرة</span>
+                    <span className="text-[11px] text-neutral-400">
+                      التجار الذين تم الاتفاق على متابعتهم ينتظرون ردك، إتمام هذه المواعيد يرفع معدل الالتزام.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {myPerformance.scoreBreakdown.dataQualityScore < 8 && (
+                <div className="p-3 bg-blue-950/30 border border-blue-900/60 text-blue-200 flex items-start gap-2.5">
+                  <ShieldCheck size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-white">تعزيز جودة الملاحظات بعد كل مكالمة</span>
+                    <span className="text-[11px] text-neutral-400">
+                      تسجيل ملاحظة واضحة ومفصلة في كل مكالمة يضمن حصولك على الدرجة الكاملة في معيار جودة الـCRM.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3 bg-emerald-950/30 border border-emerald-900/60 text-emerald-200 flex items-start gap-2.5">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block text-white">التركيز على تحويل المهتمين إلى مؤكدين</span>
+                  <span className="text-[11px] text-neutral-400">
+                    لديك {myPerformance.interestedCount} تجار في خانة المهتمين، تفعيل عروض DROVA التنافسية معهم يحولهم مباشرة لشاحنين دائمين.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB 7: PROFILE */}
       {activeTab === 'profile' && (
         <div className="bg-[#141414] border border-[#262626] p-6 space-y-4 max-w-lg">
@@ -666,7 +1024,7 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
                   <option value="wrong_phone">تصحيح رقم هاتف خاطئ</option>
                   <option value="business_closed">النشاط التجاري مغلق أو غير موجود</option>
                   <option value="high_volume_vip">تاجر ضخم VIP (أكثر من 50 طرد يومياً)</option>
-                  <option value="general">ملاحظة عامة عن المقر أو النشاط</option>
+                  <option value="other">ملاحظة عامة عن المقر أو النشاط</option>
                 </select>
               </div>
 
@@ -707,6 +1065,17 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
           </div>
         </div>
       )}
+
+      {/* Manual Merchant Entry Modal */}
+      <AddMerchantManualModal
+        isOpen={showAddMerchantModal}
+        onClose={() => setShowAddMerchantModal(false)}
+        onSuccess={() => {
+          setProspects(storage.getProspects());
+          setMyPerformance(storage.getCommercialUserPerformance(session.username || session.name, 'all'));
+          onRefresh();
+        }}
+      />
     </div>
   );
 };

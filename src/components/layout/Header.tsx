@@ -11,7 +11,9 @@ import {
   Info,
   Calendar,
   CheckCircle2,
-  X
+  X,
+  Menu,
+  Smartphone
 } from 'lucide-react';
 import { NavView } from './Sidebar';
 import { LanguageSelector } from './LanguageSelector';
@@ -26,6 +28,8 @@ interface HeaderProps {
   onNavigate: (view: NavView, params?: Record<string, any>) => void;
   onQuickExport?: () => void;
   onLogout?: () => void;
+  onToggleMobileMenu?: () => void;
+  onSwitchToMobile?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,6 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onQuickExport,
   onLogout,
+  onToggleMobileMenu,
+  onSwitchToMobile,
 }) => {
   const [session, setSession] = useState(() => storage.getUserSession());
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
@@ -73,26 +79,38 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-16 bg-[#0C0C0C] border-b border-[#262626] px-5 flex items-center justify-between gap-4 shrink-0 z-20">
-      {/* Breadcrumb & Section Title */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div>
-          <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-            <span>{title}</span>
-            <span className="text-xs text-[#545458] font-normal">|</span>
-            <span className="text-xs text-[#8E8E93] font-normal flex items-center gap-1">
-              <ShieldCheck size={13} className="text-emerald-400" />
+    <header className="h-16 bg-[#0C0C0C] border-b border-[#262626] px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4 shrink-0 z-20">
+      {/* Mobile Hamburger & Section Title */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="lg:hidden p-2 text-[#EDEDED] hover:text-white bg-[#181818] hover:bg-[#222222] border border-[#2E2E2E] rounded transition-colors cursor-pointer shrink-0"
+            title="فتح القائمة الرئيسية"
+            aria-label="القائمة الرئيسية"
+          >
+            <Menu size={18} className="text-white" />
+          </button>
+        )}
+
+        <div className="min-w-0">
+          <h1 className="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
+            <span className="truncate">{title}</span>
+            <span className="text-xs text-[#545458] font-normal hidden sm:inline">|</span>
+            <span className="text-[11px] sm:text-xs text-[#8E8E93] font-normal hidden sm:flex items-center gap-1">
+              <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
               <span>{i18n.t('app.quality_badge') || 'معتمد - DROVA Express'}</span>
             </span>
           </h1>
           {subtitle && (
-            <p className="text-xs text-[#8E8E93] truncate">{subtitle}</p>
+            <p className="text-[10px] sm:text-xs text-[#8E8E93] truncate hidden sm:block max-w-xl">{subtitle}</p>
           )}
         </div>
       </div>
 
       {/* Action Zone, Notifications, User Badge & Logout */}
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* Language Selector */}
         <LanguageSelector />
 
@@ -100,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onQuickExport && session.role !== 'commercial' && (
           <button
             onClick={onQuickExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#EDEDED] bg-[#1C1C1C] hover:bg-[#262626] border border-[#333333] transition-colors whitespace-nowrap cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#EDEDED] bg-[#1C1C1C] hover:bg-[#262626] border border-[#333333] transition-colors whitespace-nowrap cursor-pointer"
           >
             <Download size={14} className="text-[#8E8E93]" />
             <span>{i18n.t('app.quick_export') || 'تصدير سريع'}</span>
@@ -111,10 +129,10 @@ export const Header: React.FC<HeaderProps> = ({
         {(session.role === 'super_admin' || session.role === 'admin_marketing') && (
           <button
             onClick={() => onNavigate('campaigns_new')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#FF0000] hover:bg-[#E00000] shadow-sm shadow-red-950/40 transition-colors whitespace-nowrap cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#FF0000] hover:bg-[#E00000] shadow-sm shadow-red-950/40 transition-colors whitespace-nowrap cursor-pointer"
           >
             <Plus size={14} />
-            <span>{i18n.t('app.new_campaign') || 'حملة استكشاف'}</span>
+            <span className="hidden md:inline">{i18n.t('app.new_campaign') || 'حملة استكشاف'}</span>
           </button>
         )}
 
@@ -181,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <div className="mt-0.5 shrink-0">
                         {item.type === 'warning' ? (
                           <AlertCircle size={15} className="text-amber-400" />
-                        ) : item.type === 'error' ? (
+                        ) : item.type === 'urgent' ? (
                           <AlertCircle size={15} className="text-[#FF0000]" />
                         ) : (
                           <Info size={15} className="text-blue-400" />
@@ -209,8 +227,20 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* User Session Badge & Logout */}
+        {/* User Session Badge, Mobile Switch & Logout */}
         <div className="flex items-center gap-2 pl-2 border-l border-[#262626]">
+
+          {onSwitchToMobile && (
+            <button
+              onClick={onSwitchToMobile}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#141414] hover:bg-[#202020] border border-[#2E2E2E] hover:border-[#00E5FF]/40 text-[#00E5FF] text-xs transition-colors cursor-pointer rounded"
+              title="التبديل إلى واجهة الهاتف المخصصة"
+            >
+              <Smartphone size={14} />
+              <span className="hidden sm:inline">واجهة الهاتف</span>
+            </button>
+          )}
+
           <div className="text-right hidden sm:block">
             <div className="text-xs font-bold text-white leading-none truncate max-w-[120px]">
               {session.name}
@@ -222,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={handleLogoutClick}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141414] hover:bg-rose-950/60 border border-[#2E2E2E] hover:border-rose-800 text-[#8E8E93] hover:text-rose-300 text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141414] hover:bg-rose-950/60 border border-[#2E2E2E] hover:border-rose-800 text-[#8E8E93] hover:text-rose-300 text-xs transition-colors cursor-pointer rounded"
             title="تسجيل الخروج الآمن"
           >
             <LogOut size={14} />

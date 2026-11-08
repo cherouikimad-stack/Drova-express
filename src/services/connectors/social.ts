@@ -1,8 +1,6 @@
-/**
- * DROVA Social Media Connectors: Facebook, Instagram, and TikTok Public Profiles
- */
 import { SourceProvider, ScanCriteria, RawDiscoveryRecord, EnrichmentResult, ProviderHealth } from './base';
 import { getWilayaByName } from '../../data/wilayas';
+import { generateRealisticAlgerianMerchants } from './generator';
 
 export class FacebookProvider implements SourceProvider {
   id = 'facebook' as const;
@@ -22,48 +20,17 @@ export class FacebookProvider implements SourceProvider {
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
     const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const targetCount = Math.max(criteria.targetNumber || 20, 10);
 
-    return [
-      {
-        id: `fb_${wilayaFr.toLowerCase()}_1`,
-        source: this.id,
-        sourceUrl: `https://facebook.com/dz.fashion.${wilayaFr.toLowerCase()}`,
-        businessName: `Moda DZ ${wilayaFr}`,
-        category: 'clothing',
-        product: 'أزياء محجبات وملابس خروج نسائية',
-        phone: '0552891045',
-        rawPhone: '0552 89 10 45',
-        address: `شارع فلسطين، ${targetCommune}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `صفحة تجارية رسمية. مقرنا في ${targetCommune} ${wilayaName}. التوصيل متوفر والدفع عند الاستلام عبر ياليدين إكسبرس. واتساب: 0552891045`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        courierMentioned: 'Yalidine Express',
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      },
-      {
-        id: `fb_${wilayaFr.toLowerCase()}_2`,
-        source: this.id,
-        sourceUrl: `https://facebook.com/auto.accessoires.${wilayaFr.toLowerCase()}`,
-        businessName: `Auto Accessoires DZ`,
-        category: 'automotive_products',
-        product: 'إكسسوارات سيارات، شواحن وحوامل هواتف ذكية',
-        phone: '0770334455',
-        rawPhone: '0770-33-44-55',
-        address: `المنطقة الصناعية، ${targetCommune}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `متخصصون في لوازم وكماليات السيارات. شحن سريع للطرود 58 ولاية. للتواصل: 0770334455`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      }
-    ];
+    return generateRealisticAlgerianMerchants({
+      count: targetCount,
+      wilaya: wilayaName,
+      commune: targetCommune,
+      categories: criteria.categories,
+      source: this.id,
+      startIndex: Math.floor(Math.random() * 50000) + 30000,
+    });
   }
 
   async enrich(record: RawDiscoveryRecord): Promise<EnrichmentResult> {
@@ -105,49 +72,17 @@ export class InstagramProvider implements SourceProvider {
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
     const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const targetCount = Math.max(criteria.targetNumber || 20, 10);
 
-    return [
-      {
-        id: `ig_${wilayaFr.toLowerCase()}_1`,
-        source: this.id,
-        sourceUrl: `https://instagram.com/bijoux_luxe_${wilayaFr.toLowerCase()}`,
-        businessName: `Bijoux & Parures Dz`,
-        category: 'jewelry',
-        product: 'أطقم فضة وإكسسوارات زيركون فاخرة مع بوكس هدايا راقي',
-        phone: '0662998877',
-        rawPhone: '0662 99 88 77',
-        address: `${targetCommune}، ${wilayaName}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `✨ Créatrice de Bijoux & Accessoires ✨\n📍 Basée à ${targetCommune}, ${wilayaFr}\n📦 Livraison 58 Wilayas (Stop Desk & Domicile)\n📲 Commandes WhatsApp: wa.me/213662998877`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        courierMentioned: 'ZR Express',
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      },
-      {
-        id: `ig_${wilayaFr.toLowerCase()}_2`,
-        source: this.id,
-        sourceUrl: `https://instagram.com/beauty_skin_${wilayaFr.toLowerCase()}`,
-        businessName: `Skin Care Glow DZ`,
-        category: 'beauty_products',
-        product: 'منتجات كورية أصلية لعلاج وتفتيح البشرة',
-        phone: '0555667788',
-        rawPhone: '0555 66 77 88',
-        address: `${targetCommune}، ${wilayaName}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `Korean Skincare Authentic in Algeria\nWilaya: ${wilayaName}\nLivraison avec Maystro Delivery\nContact: 0555667788`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        courierMentioned: 'Maystro Delivery',
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      }
-    ];
+    return generateRealisticAlgerianMerchants({
+      count: targetCount,
+      wilaya: wilayaName,
+      commune: targetCommune,
+      categories: criteria.categories,
+      source: this.id,
+      startIndex: Math.floor(Math.random() * 50000) + 40000,
+    });
   }
 
   async enrich(record: RawDiscoveryRecord): Promise<EnrichmentResult> {
@@ -191,29 +126,17 @@ export class TikTokProvider implements SourceProvider {
   async discover(criteria: ScanCriteria): Promise<RawDiscoveryRecord[]> {
     const wilayaObj = getWilayaByName(criteria.wilaya);
     const wilayaName = wilayaObj ? wilayaObj.nameAr : criteria.wilaya;
-    const wilayaFr = wilayaObj ? wilayaObj.nameFr : criteria.wilaya;
     const targetCommune = criteria.commune || (wilayaObj?.communes[0] || 'الوسط');
+    const targetCount = Math.max(criteria.targetNumber || 20, 10);
 
-    return [
-      {
-        id: `tt_${wilayaFr.toLowerCase()}_1`,
-        source: this.id,
-        sourceUrl: `https://tiktok.com/@dz_perfumes_${wilayaFr.toLowerCase()}`,
-        businessName: `Parfumerie Al Ward`,
-        category: 'cosmetics',
-        product: 'عطور زيتية وتركيبات فاخرة، علب هدايا أنيقة',
-        phone: '0771829304',
-        rawPhone: '0771 82 93 04',
-        address: `${targetCommune}، ${wilayaName}`,
-        wilaya: wilayaName,
-        commune: targetCommune,
-        rawText: `متجر عطور فاخرة في ${wilayaName}. شاهد التغليف بالفيديو! التوصيل لجميع الولايات. للطلب واتساب أو هاتف: 0771829304`,
-        hasCatalog: true,
-        hasNationalDelivery: true,
-        observedAt: new Date().toISOString(),
-        reliability: this.reliability,
-      }
-    ];
+    return generateRealisticAlgerianMerchants({
+      count: targetCount,
+      wilaya: wilayaName,
+      commune: targetCommune,
+      categories: criteria.categories,
+      source: this.id,
+      startIndex: Math.floor(Math.random() * 50000) + 50000,
+    });
   }
 
   async enrich(record: RawDiscoveryRecord): Promise<EnrichmentResult> {

@@ -61,7 +61,7 @@ const NON_CONVERSION_REASONS = [
   'تخوف من بطء آجال تسليم الطرود والرجوع (Retour)',
   'حجم شحن ضعيف جداً أو بيع محلي في المحل فقط',
   'تجربة سابقة سلبية مع خدمات التوصيل',
-  'لا يحتاج تغطية وطنية (58 ولاية)',
+  'لا يحتاج تغطية وطنية (69 ولاية)',
   'أسباب أخرى خاصة بالتاجر'
 ];
 
@@ -98,7 +98,7 @@ export const CallModal: React.FC<CallModalProps> = ({
 
   // Commercial feedback to marketing
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackCategory, setFeedbackCategory] = useState<'wrong_phone' | 'business_closed' | 'high_volume_vip' | 'general'>('wrong_phone');
+  const [feedbackCategory, setFeedbackCategory] = useState<'wrong_phone' | 'business_closed' | 'high_volume_vip' | 'other'>('wrong_phone');
   const [feedbackValue, setFeedbackValue] = useState('');
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
@@ -188,11 +188,14 @@ export const CallModal: React.FC<CallModalProps> = ({
     if (!feedbackValue.trim()) return;
 
     storage.submitCommercialFeedback({
+      commercial_id: session.user_id || 'usr_commercial',
       commercial_name: session.name,
       prospect_id: prospect.id,
       prospect_name: prospect.name,
       category: feedbackCategory,
+      field_name: feedbackCategory === 'wrong_phone' ? 'phone' : 'general',
       reported_value: feedbackValue.trim(),
+      notes: feedbackValue.trim(),
     });
 
     setFeedbackSuccess(true);
@@ -517,7 +520,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                     <option value="wrong_phone">تصحيح رقم هاتف خاطئ</option>
                     <option value="business_closed">النشاط التجاري مغلق أو غير موجود</option>
                     <option value="high_volume_vip">تاجر ضخم VIP (أكثر من 50 طرد يومياً)</option>
-                    <option value="general">ملاحظة عامة عن المقر أو النشاط</option>
+                    <option value="other">ملاحظة عامة عن المقر أو النشاط</option>
                   </select>
                 </div>
 

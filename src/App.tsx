@@ -34,6 +34,8 @@ import { CommercialSimpleWorkspace } from './views/CommercialSimpleWorkspace';
 import { ProspectDetailModal } from './components/prospects/ProspectDetailModal';
 import { exportToExcel } from './services/excel';
 import { LoginView } from './views/LoginView';
+import { MobileCRMView } from './components/mobile/MobileCRMView';
+import { LayoutDashboard, Users, PhoneCall, CalendarCheck, Truck, Menu as MenuIcon } from 'lucide-react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => storage.isAuthenticated());
@@ -43,6 +45,25 @@ export default function App() {
   });
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Device Mode: auto-detect smartphone vs desktop PC
+  const [deviceMode, setDeviceMode] = useState<'mobile' | 'desktop'>(() => {
+    const saved = localStorage.getItem('drova_ui_mode');
+    if (saved === 'mobile' || saved === 'desktop') return saved;
+    return typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const saved = localStorage.getItem('drova_ui_mode');
+      if (!saved) {
+        setDeviceMode(window.innerWidth < 1024 ? 'mobile' : 'desktop');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // i18n State
   const [currentLang, setCurrentLang] = useState(() => i18n.getCurrentLanguage());
@@ -119,10 +140,18 @@ export default function App() {
       }
     }
 
+    // Strict RBAC (Section 19): Full discovery only for super_admin and admin_marketing
+    const discoveryRestrictedViews: NavView[] = ['campaigns_new', 'sources'];
+    if (discoveryRestrictedViews.includes(view) && session.role !== 'super_admin' && session.role !== 'admin_marketing') {
+      setCurrentView(session.role === 'commercial' ? 'commercial_workspace' : 'dashboard');
+      return;
+    }
+
     if (params?.id) {
       setActiveCampaignId(params.id);
     }
     setCurrentView(view);
+    setIsMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -145,7 +174,7 @@ export default function App() {
       case 'campaigns':
         return activeCampaignId
           ? { title: 'متابعة مسار الحملة التنقيبية', subtitle: 'مراقبة خط أنابيب الاستكشاف، التوثيق، وكشف التكرارات لحظياً' }
-          : { title: 'حملات التنقيب الميدانية', subtitle: 'إدارة وتتبع مسوحات التجار في الولايات الـ 58' };
+          : { title: 'حملات التنقيب الميدانية', subtitle: 'إدارة وتتبع مسوحات التجار في الولايات الـ 69' };
       case 'campaigns_new':
         return { title: 'إطلاق حملة استكشاف جديدة', subtitle: 'تحديد الولاية، المصادر المتصلة، وفئات السلع المؤهلة للشحن' };
       case 'prospects':
@@ -180,7 +209,7 @@ export default function App() {
           subtitle: 'الواجهة الميدانية المبسطة للاتصال السريع، تسجيل المتابعات، والإبلاغ للمسؤول'
         };
       case 'wilayas':
-        return { title: 'تغطية الولايات الـ 58', subtitle: 'خريطة وكثافة التجار في كل ولاية وبدء التنقيب السريع' };
+        return { title: 'تغطية الولايات الـ 69', subtitle: 'خريطة وكثافة التجار في كل ولاية وبدء التنقيب السريع' };
       case 'sources':
         return { title: 'محركات استكشاف المصادر العامة', subtitle: 'مراقبة اتصال موصلات جوجل، ميتا، والشبكات العامة المفتوحة' };
       case 'statistics':
@@ -206,6 +235,41 @@ export default function App() {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // 1. Separate Dedicated Mobile Smartphone Interface
+  if (deviceMode === 'mobile') {
+    return (
+      <>
+        <MobileCRMView
+          prospects={prospects}
+          onSelectProspect={setSelectedProspect}
+          onLogout={handleLogout}
+          onSwitchToDesktop={() => {
+            setDeviceMode('desktop');
+            localStorage.setItem('drova_ui_mode', 'desktop');
+          }}
+          onNavigateView={(view) => {
+            setDeviceMode('desktop');
+            localStorage.setItem('drova_ui_mode', 'desktop');
+            setCurrentView(view);
+          }}
+        />
+
+        {/* Merchant Dossier Modal */}
+        {selectedProspect && (
+          <ProspectDetailModal
+            prospect={selectedProspect}
+            onClose={() => setSelectedProspect(null)}
+            onUpdate={() => {
+              setProspects(storage.getProspects());
+              setReviewCount(storage.getNeedsReviewItems().length);
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  // 2. Full High-Productivity PC Desktop Interface
   return (
     <div className="flex h-screen w-full bg-[#0C0C0C] text-[#EDEDED] overflow-hidden select-none" dir={direction} lang={currentLang}>
       {/* Sidebar Navigation */}
@@ -218,6 +282,8 @@ export default function App() {
         overdueFollowUpsCount={overdueFollowUpsCount}
         expediteursCount={expediteursCount}
         onLogout={handleLogout}
+        isOpenMobile={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Workspace */}
@@ -230,6 +296,11 @@ export default function App() {
           onNavigate={handleNavigate}
           onQuickExport={handleQuickExport}
           onLogout={handleLogout}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(prev => !prev)}
+          onSwitchToMobile={() => {
+            setDeviceMode('mobile');
+            localStorage.setItem('drova_ui_mode', 'mobile');
+          }}
         />
 
         {/* Content Viewport */}
@@ -373,7 +444,7 @@ export default function App() {
             />
           )}
 
-          {currentView === 'sources' && <SourcesView />}
+          {currentView === 'sources' && <SourcesView onNavigate={handleNavigate} />}
 
           {currentView === 'statistics' && (
             <StatisticsView
@@ -405,6 +476,76 @@ export default function App() {
 
           {currentView === 'tests' && <TestsRunnerView />}
         </main>
+
+        {/* Mobile Quick Bottom Navigation Bar */}
+        <nav className="lg:hidden h-14 bg-[#101010] border-t border-[#262626] flex items-center justify-around px-1 z-30 shrink-0 select-none">
+          <button
+            type="button"
+            onClick={() => handleNavigate('dashboard')}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium transition-colors cursor-pointer ${
+              currentView === 'dashboard' ? 'text-[#FF0000]' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <LayoutDashboard size={18} />
+            <span>الرئيسية</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleNavigate('prospects')}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium transition-colors cursor-pointer ${
+              currentView === 'prospects' ? 'text-[#FF0000]' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <Users size={18} />
+            <span>التجار</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleNavigate('my_calls')}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium transition-colors cursor-pointer ${
+              currentView === 'my_calls' ? 'text-[#FF0000]' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <PhoneCall size={18} />
+            <span>المكالمات</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleNavigate('follow_ups')}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium transition-colors cursor-pointer relative ${
+              currentView === 'follow_ups' ? 'text-[#FF0000]' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <CalendarCheck size={18} />
+            <span>المتابعات</span>
+            {overdueFollowUpsCount > 0 && (
+              <span className="absolute top-0.5 right-3 w-2 h-2 bg-[#FF0000] rounded-full animate-ping" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleNavigate('expediteurs')}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium transition-colors cursor-pointer ${
+              currentView === 'expediteurs' ? 'text-[#FF0000]' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            <Truck size={18} />
+            <span>الشاحنون</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 text-[10px] font-medium text-[#8E8E93] hover:text-white transition-colors cursor-pointer"
+          >
+            <MenuIcon size={18} />
+            <span>المزيد</span>
+          </button>
+        </nav>
       </div>
 
       {/* Merchant Dossier Modal */}

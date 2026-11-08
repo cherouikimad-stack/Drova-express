@@ -148,6 +148,16 @@ export const ProspectDetailModal: React.FC<ProspectDetailModalProps> = ({
                   <VerificationBadge level={prospect.verification_status} />
                   <StatusBadge status={prospect.status} />
 
+                  {(prospect.data_origin === 'real_imported' || prospect.data_origin === 'real_manual' || prospect.source === 'excel_import') ? (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold bg-emerald-950/80 border border-emerald-700 text-emerald-300">
+                      ● تاجر حقيقي موثق
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-amber-950/80 border border-amber-800 text-amber-300">
+                      ○ محاكاة اختبارية
+                    </span>
+                  )}
+
                   {priority === 'URGENT' && (
                     <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-950/80 border border-red-700 text-red-300 flex items-center gap-1">
                       <Flame size={11} className="text-[#FF0000]" />

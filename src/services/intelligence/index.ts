@@ -114,13 +114,17 @@ export function verifyBusinessLocation(
 
   // Delivery destination keywords to discard as physical location
   const deliveryPhrases = [
+    'livraison 69 wilayas',
+    'التوصيل متوفر 69 ولاية',
     'livraison 58 wilayas',
     'التوصيل متوفر 58 ولاية',
     'توصيل لجميع الولايات',
+    'livraison vers 69 wilayas',
     'livraison vers 58 wilayas',
     'livraison alger',
     'livraison disponible à alger',
     'توصيل متوفر للجزائر العاصمة',
+    'توصيل سريع ل 69 ولاية',
     'توصيل سريع ل 58 ولاية',
   ];
 

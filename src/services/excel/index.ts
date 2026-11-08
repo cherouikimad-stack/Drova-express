@@ -8,26 +8,39 @@ import { normalizeAlgerianPhone } from '../phone';
 import { checkDuplicate, mergeProspects } from '../deduplication';
 
 export const EXACT_EXCEL_COLUMNS = [
-  '#',
-  'الاسم / الصفحة',
-  'نوع التاجر',
-  'المنتج',
-  'الولاية',
-  'البلدية',
-  'الهاتف',
-  'واتساب؟',
-  'الإيميل',
-  'رابط الصفحة',
-  'المصدر',
-  'شركة التوصيل الحالية',
-  'مستوى الولاء',
-  'colis/يوم (تقدير)',
-  'الحالة',
-  'تاريخ التواصل',
-  'المتابعة القادمة',
-  'المسؤول',
-  'ملاحظات',
-  'تنبيه',
+  'Business Name',
+  'Merchant Type',
+  'Category',
+  'Product',
+  'Wilaya',
+  'Commune',
+  'Address',
+  'Phone',
+  'Phone Source',
+  'Phone Verified',
+  'WhatsApp',
+  'WhatsApp Source',
+  'WhatsApp Verified',
+  'Email',
+  'Facebook URL',
+  'Instagram URL',
+  'Website URL',
+  'Google Maps URL',
+  'Source',
+  'Source URL',
+  'Source Type',
+  'Source Date',
+  'Current Delivery Company',
+  'Estimated Daily Shipments',
+  'Loyalty',
+  'Lead Score',
+  'Status',
+  'Contact Date',
+  'Next Follow-up',
+  'Responsible',
+  'Notes',
+  'Created At',
+  'Updated At',
 ];
 
 export interface ImportResult {
@@ -40,30 +53,43 @@ export interface ImportResult {
 }
 
 /**
- * Converts a list of Prospects into the exact DROVA Excel row format
+ * Converts a list of Prospects into the exact DROVA Section 16 Excel row format
  */
 export function prospectsToExcelData(prospects: Prospect[]) {
-  return prospects.map((p, index) => ({
-    '#': index + 1,
-    'الاسم / الصفحة': p.name || p.page_name || '',
-    'نوع التاجر': p.merchant_type || 'متجر إلكتروني',
-    'المنتج': p.product || '',
-    'الولاية': p.wilaya || '',
-    'البلدية': p.commune || '',
-    'الهاتف': p.phone || '',
-    'واتساب؟': p.whatsapp || 'غير معروف',
-    'الإيميل': p.email || '',
-    'رابط الصفحة': p.page_url || '',
-    'المصدر': p.source || '',
-    'شركة التوصيل الحالية': p.current_courier || 'غير معروف',
-    'مستوى الولاء': p.loyalty_level || 'Unknown',
-    'colis/يوم (تقدير)': p.parcel_estimate || 'غير معروف',
-    'الحالة': p.status || 'جديد',
-    'تاريخ التواصل': p.contact_date || '',
-    'المتابعة القادمة': p.next_followup || '',
-    'المسؤول': p.responsible || '',
-    'ملاحظات': p.notes || '',
-    'تنبيه': p.alert || '',
+  return prospects.map((p) => ({
+    'Business Name': p.business_name || p.name || p.page_name || '',
+    'Merchant Type': p.merchant_type || 'متجر إلكتروني',
+    'Category': p.category || '',
+    'Product': p.product || '',
+    'Wilaya': p.wilaya || '',
+    'Commune': p.commune || '',
+    'Address': p.address || '',
+    'Phone': p.phone || '',
+    'Phone Source': p.phone_source || (p.phone ? p.source : ''),
+    'Phone Verified': p.phone_verified ?? (p.phone_verification_status === 'VERIFIED'),
+    'WhatsApp': p.whatsapp || '',
+    'WhatsApp Source': p.whatsapp_source || '',
+    'WhatsApp Verified': p.whatsapp_verified ?? (p.whatsapp === 'نعم'),
+    'Email': p.email || '',
+    'Facebook URL': p.facebook_url || (p.page_url?.includes('facebook') ? p.page_url : ''),
+    'Instagram URL': p.instagram_url || (p.page_url?.includes('instagram') ? p.page_url : ''),
+    'Website URL': p.website_url || (p.page_url && !p.page_url.includes('facebook') && !p.page_url.includes('instagram') ? p.page_url : ''),
+    'Google Maps URL': p.google_maps_url || (p.source === 'Google Maps' ? (p.source_url || p.page_url) : ''),
+    'Source': p.source || '',
+    'Source URL': p.source_url || p.page_url || '',
+    'Source Type': p.source_type || 'web',
+    'Source Date': p.source_date || p.created_at || '',
+    'Current Delivery Company': p.current_delivery_company || p.current_courier || '',
+    'Estimated Daily Shipments': p.estimated_daily_shipments || p.parcel_estimate || '',
+    'Loyalty': p.loyalty || p.loyalty_level || '',
+    'Lead Score': p.score || 'B',
+    'Status': p.status || 'جديد',
+    'Contact Date': p.contact_date || '',
+    'Next Follow-up': p.next_followup || '',
+    'Responsible': p.responsible || '',
+    'Notes': p.notes || '',
+    'Created At': p.created_at || '',
+    'Updated At': p.updated_at || '',
   }));
 }
 
@@ -75,28 +101,9 @@ export function exportToExcel(prospects: Prospect[], filename = 'DROVA_PROSPECTS
   const worksheet = XLSX.utils.json_to_sheet(data, { header: EXACT_EXCEL_COLUMNS });
 
   // Set column widths for optimal display in Excel
-  const colWidths = [
-    { wch: 6 },  // #
-    { wch: 28 }, // الاسم / الصفحة
-    { wch: 18 }, // نوع التاجر
-    { wch: 32 }, // المنتج
-    { wch: 18 }, // الولاية
-    { wch: 18 }, // البلدية
-    { wch: 18 }, // الهاتف
-    { wch: 12 }, // واتساب؟
-    { wch: 22 }, // الإيميل
-    { wch: 35 }, // رابط الصفحة
-    { wch: 18 }, // المصدر
-    { wch: 22 }, // شركة التوصيل الحالية
-    { wch: 14 }, // مستوى الولاء
-    { wch: 18 }, // colis/يوم (تقدير)
-    { wch: 16 }, // الحالة
-    { wch: 15 }, // تاريخ التواصل
-    { wch: 15 }, // المتابعة القادمة
-    { wch: 18 }, // المسؤول
-    { wch: 30 }, // ملاحظات
-    { wch: 18 }, // تنبيه
-  ];
+  const colWidths = EXACT_EXCEL_COLUMNS.map(col => ({
+    wch: Math.max(col.length + 4, 16)
+  }));
   worksheet['!cols'] = colWidths;
 
   const workbook = XLSX.utils.book_new();
@@ -244,6 +251,7 @@ export async function parseAndImportFile(
         phone_verification_status: 'VERIFIED',
         business_location_verification: candidate.wilaya ? 'PROBABLE' : 'UNVERIFIED',
         shipping_potential: 'HIGH',
+        data_origin: 'real_imported',
         created_at: now,
         updated_at: now,
       };

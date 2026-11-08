@@ -3,7 +3,7 @@
  * Master Types & Data Contracts (High-Volume Discovery Architecture)
  */
 
-export type WilayaCode = string; // '01' to '58'
+export type WilayaCode = string; // '01' to '69' (Official 69 Algerian Wilayas)
 
 export interface Wilaya {
   code: string;
@@ -12,9 +12,19 @@ export interface Wilaya {
   communes: string[];
 }
 
-export type LeadScore = 'A+' | 'A' | 'B' | 'REJECT';
+export type LeadScore = 'A+' | 'A' | 'B' | 'C' | 'REJECT';
 
-export type VerificationLevel = 'VERIFIED' | 'PROBABLE' | 'UNVERIFIED' | 'INVALID';
+export type VerificationLevel =
+  | 'DISCOVERED'
+  | 'ENRICHING'
+  | 'VERIFICATION_REQUIRED'
+  | 'VERIFIED'
+  | 'CONTACTABLE'
+  | 'DUPLICATE'
+  | 'REJECTED'
+  | 'PROBABLE'
+  | 'UNVERIFIED'
+  | 'INVALID';
 
 export type WhatsAppStatus = 'نعم' | 'لا' | 'غير معروف';
 
@@ -249,6 +259,29 @@ export interface Prospect {
   cnrc_number?: string;
   commercial_register_name?: string;
   caci_activity_code?: string;
+  data_origin?: 'real_imported' | 'real_manual' | 'simulated';
+
+  // Section 10: Official Merchant Discovery Engine Schema
+  business_name?: string;
+  address?: string;
+  source_url?: string;
+  phone_source?: string;
+  phone_verified?: boolean;
+  whatsapp_source?: string;
+  whatsapp_verified?: boolean;
+  facebook_url?: string;
+  instagram_url?: string;
+  website_url?: string;
+  google_maps_url?: string;
+  source_type?: string;
+  source_date?: string;
+  current_delivery_company?: string;
+  estimated_daily_shipments?: string;
+  loyalty?: string;
+  duplicate_confidence?: number;
+  google_place_id?: string;
+  added_by?: string;
+  creator_id?: string;
 }
 
 export interface CRMCall {
@@ -400,6 +433,76 @@ export interface SourcePerformanceROI {
   activated: number;
   active_expediteurs: number;
   conversion_rate: number;
+}
+
+export interface PerformanceScoringWeights {
+  contactActivity: number;       // default 25%
+  successfulContacts: number;    // default 20%
+  confirmedMerchants: number;    // default 20%
+  expediteurConversion: number;  // default 15%
+  followUpCompletion: number;    // default 10%
+  dataQualityDiscipline: number; // default 10%
+}
+
+export interface CommercialPerformanceReport {
+  userId: string;
+  name: string;
+  username: string;
+  role: UserRole;
+  phone?: string;
+  avatar?: string;
+
+  // Real Pipeline Counts
+  assigned: number;
+  contacted: number;          // STRICT: Distinct prospects with at least 1 recorded call
+  notContacted: number;       // assigned - contacted (clamped >= 0)
+  totalCalls: number;         // Total call attempts
+  successfulCalls: number;    // Confirmed conversations / reached decision-maker
+  unansweredCalls: number;    // No answer
+  busyCalls: number;          // Busy / unreachable
+  wrongNumberCalls: number;   // Wrong number
+
+  // Qualitative outcomes
+  manuallyAddedCount: number; // Number of merchants added manually by this commercial
+  interestedCount: number;
+  notInterestedCount: number;
+  callbackCount: number;
+  confirmedCount: number;     // Reached 'أكد التعامل مع DROVA'
+  onboardingCount: number;    // Checklist in progress or completed
+  expediteursCount: number;   // Converted to Expediteur profile
+  activeMerchantsCount: number; // Active or activated shipper
+
+  // Follow-ups
+  followUpsTotal: number;
+  followUpsCompleted: number;
+  followUpsOverdue: number;
+  followUpsPending: number;
+
+  // Calculated Rates (%)
+  contactRate: number;              // (contacted / assigned) * 100
+  successfulContactRate: number;    // (successfulCalls / totalCalls) * 100
+  interestedRate: number;           // (interestedCount / contacted) * 100
+  confirmedRate: number;            // (confirmedCount / contacted) * 100
+  onboardingRate: number;           // (onboardingCount / contacted) * 100
+  expediteurConversionRate: number; // (expediteursCount / contacted) * 100
+  activeMerchantConversionRate: number; // (activeMerchantsCount / contacted) * 100
+  followUpCompletionRate: number;   // (followUpsCompleted / (followUpsCompleted + followUpsOverdue)) * 100
+
+  // Performance Score (0 - 100) & Ranking
+  score: number;
+  rank: 'A+' | 'A' | 'B' | 'C' | 'D';
+  rankTitle: string;
+  scoreBreakdown: {
+    contactActivityScore: number;
+    successfulContactsScore: number;
+    confirmedMerchantsScore: number;
+    expediteurConversionScore: number;
+    followUpCompletionScore: number;
+    dataQualityScore: number;
+  };
+
+  // Period filter applied
+  period: 'today' | 'week' | 'month' | 'all' | 'custom';
 }
 
 // Missing Phone Pool record (Second-pass enrichment pipeline)

@@ -108,7 +108,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-[#8E8E93] mt-0.5">
-                تجميع متعدد المصادر متواصل عبر الولايات الـ 58 دون اعتماد على مصدر واحد ودون اصطناع أرقام وهمية
+                تجميع متعدد المصادر متواصل عبر الولايات الـ 69 دون اعتماد على مصدر واحد ودون اصطناع أرقام وهمية
               </p>
             </div>
           </div>
@@ -385,7 +385,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             { label: 'TikTok Profiles', online: true },
             { label: 'Ouedkniss Stores', online: true },
             { label: 'Pages Jaunes DZ', online: true },
-            { label: 'AnnuairesDZ 58W', online: true },
+            { label: 'AnnuairesDZ 69W', online: true },
             { label: 'El Mouchir / CACI', online: true },
             { label: 'Kompass B2B', online: true },
             { label: 'Generic Directories', online: true },
@@ -442,25 +442,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1C1C1C]">
-                  {recentProspects.map(p => (
-                    <tr
-                      key={p.id}
-                      onClick={() => onSelectProspect(p)}
-                      className="hover:bg-[#1A1A1A] cursor-pointer transition-colors"
-                    >
-                      <td className="py-2.5 font-medium text-white truncate max-w-[150px]">
-                        {p.name}
-                      </td>
-                      <td className="py-2.5 text-[#EDEDED]">{p.wilaya}</td>
-                      <td className="py-2.5 font-mono-data text-emerald-400">{p.phone}</td>
-                      <td className="py-2.5 text-[#8E8E93] font-mono text-[11px]">{p.source}</td>
-                      <td className="py-2.5 text-[#8E8E93]">{p.current_courier}</td>
-                      <td className="py-2.5 font-mono-data font-bold text-white">{p.parcel_estimate}</td>
-                      <td className="py-2.5">
-                        <ScoreBadge score={p.score} />
+                  {recentProspects.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-[#8E8E93]">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <ShoppingBag size={24} className="text-[#3A3A3C]" />
+                          <p className="text-xs font-medium text-[#EDEDED]">قاعدة التجار المركزية جاهزة وفارغة للبدء</p>
+                          <p className="text-[11px] text-[#71717A]">
+                            لم يتم تسجيل تجار بعد. يمكنك إضافة تاجر جديد يدوياً أو استيراد ملف Excel أو تشغيل محرك الاستكشاف.
+                          </p>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    recentProspects.map(p => (
+                      <tr
+                        key={p.id}
+                        onClick={() => onSelectProspect(p)}
+                        className="hover:bg-[#1A1A1A] cursor-pointer transition-colors"
+                      >
+                        <td className="py-2.5 font-medium text-white truncate max-w-[150px]">
+                          {p.name}
+                        </td>
+                        <td className="py-2.5 text-[#EDEDED]">{p.wilaya}</td>
+                        <td className="py-2.5 font-mono-data text-emerald-400">{p.phone}</td>
+                        <td className="py-2.5 text-[#8E8E93] font-mono text-[11px]">{p.source}</td>
+                        <td className="py-2.5 text-[#8E8E93]">{p.current_courier}</td>
+                        <td className="py-2.5 font-mono-data font-bold text-white">{p.parcel_estimate}</td>
+                        <td className="py-2.5">
+                          <ScoreBadge score={p.score} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

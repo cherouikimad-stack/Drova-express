@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- User Accounts ---
+    // Must allow read and write so enterprise username/PBKDF2 login and user creation work across all devices
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // --- Central Merchants Collection (Master Merchant Database) ---
+    match /merchants/{merchantId} {
+      allow read, write: if true;
+    }
+
+    // --- Phone Uniqueness Lock & Index (Atomic Duplicate Guard) ---
+    match /merchant_phones/{phoneKey} {
+      allow read, write: if true;
+    }
+
+    // --- Prospects (Synchronized Collection) ---
+    match /prospects/{prospectId} {
+      allow read, write: if true;
+    }
+
+    // --- Call Records ---
+    match /calls/{callId} {
+      allow read, write: if true;
+    }
+
+    // --- Follow-ups ---
+    match /followUps/{followUpId} {
+      allow read, write: if true;
+    }
+    match /followups/{followUpId} {
+      allow read, write: if true;
+    }
+
+    // --- Assignments ---
+    match /assignments/{assignmentId} {
+      allow read, write: if true;
+    }
+
+    // --- Merchant Activities ---
+    match /merchantActivities/{activityId} {
+      allow read, write: if true;
+    }
+
+    // --- Expéditeurs (Shippers) ---
+    match /expediteurs/{expediteurId} {
+      allow read, write: if true;
+    }
+
+    // --- Commercial Feedbacks to Marketing ---
+    match /commercialFeedbacks/{feedbackId} {
+      allow read, write: if true;
+    }
+
+    // --- Real-time Notifications ---
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // --- Immutable Audit Trail ---
+    match /auditLogs/{logId} {
+      allow read, create: if true;
+      allow update, delete: if false; // Strict immutability!
+    }
+
+    // --- System Settings ---
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+
+    // --- Connectivity check ---
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+  }
+}
+
