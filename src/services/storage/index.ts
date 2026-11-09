@@ -141,10 +141,94 @@ const DEFAULT_USER_ACCOUNTS: UserAccount[] = [
     created_at: '2026-10-01',
     created_by: 'SYSTEM',
   },
+  {
+    id: 'usr_1793796393073_ycw7',
+    full_name: 'hassena raggab',
+    username: 'hassena',
+    password_hash: '55b584e6929dbf88f154d2129848110999704fcf878a5ead8be4feaf437108ae',
+    salt: 'x4Fy8mj34ok2Lg7x',
+    role: 'commercial',
+    phone: '+213',
+    email: 'hassena@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-04T12:46:33.073Z',
+    created_by: 'Cherouik Imad',
+  },
+  {
+    id: 'usr_1793796427605_5vh2',
+    full_name: 'ahlam mokdad',
+    username: 'ahlam',
+    password_hash: '654fc663b1fd261c7edbc41c0d597d296b1eb790d9dbe4c5cd3dd573bbf6a27e',
+    salt: 'lydYu3KTsW9SG9jM',
+    role: 'commercial',
+    phone: '+213',
+    email: 'ahlam@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-04T12:47:07.605Z',
+    created_by: 'Cherouik Imad',
+  },
+  {
+    id: 'usr_1793796606473_rt9n',
+    full_name: 'nouahle aya',
+    username: 'aya',
+    password_hash: 'f831dd3d5230a6b049da77bb9c3f8d61226932fca3c12a2a8fd85f157965a0e4',
+    salt: '0ouyqgQaEn7Hfook',
+    role: 'commercial',
+    phone: '+213',
+    email: 'aya@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-04T12:50:06.473Z',
+    created_by: 'Cherouik Imad',
+  },
+  {
+    id: 'usr_1793796671229_53u9',
+    full_name: 'bouchera noureddine',
+    username: 'bouchera',
+    password_hash: 'c2e87de66aa109158138f3e1b647f43515f8fb8511038bb026cc3dec12e1b2f3',
+    salt: 'FJ6KI5h20dAwNZpx',
+    role: 'commercial',
+    phone: '+213',
+    email: 'bouchera@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-04T12:51:11.229Z',
+    created_by: 'Cherouik Imad',
+  },
+  {
+    id: 'usr_1793796789555_jpaj',
+    full_name: 'rahmani mustapha',
+    username: 'mustapha',
+    password_hash: 'ae10bc0e649c3dd2aac25625b164592480d079a4b3e504d7b27cad29d9d56089',
+    salt: 'XsezOppioCtHY4G3',
+    role: 'commercial',
+    phone: '+213',
+    email: 'mustapha@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-04T12:53:09.555Z',
+    created_by: 'Cherouik Imad',
+  },
+  {
+    id: 'usr_1794146421915_b5xy',
+    full_name: 'SidAhmed Tahari',
+    username: 'sidahmed',
+    password_hash: 'fa15f122d5a9a6fdb011253fc65e9fa9d0c5325895ae19316a21dd53079e3ce4',
+    salt: 'X1kOlqfgAySehanu',
+    role: 'commercial',
+    phone: '+213',
+    email: 'sidahmed@drova-express.dz',
+    status: 'active',
+    created_at: '2026-11-08T14:00:21.915Z',
+    created_by: 'Cherouik Imad',
+  },
 ];
 
 const DEFAULT_COMMERCIAL_ACCOUNTS: CommercialAccount[] = [
   { user_id: 'usr_cherouik', display_name: 'Cherouik Imad', username: 'cherouik', role: 'super_admin', phone: '+213550112233', status: 'active', created_at: '2026-10-01' },
+  { user_id: 'usr_1793796393073_ycw7', display_name: 'hassena raggab', username: 'hassena', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-04' },
+  { user_id: 'usr_1793796427605_5vh2', display_name: 'ahlam mokdad', username: 'ahlam', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-04' },
+  { user_id: 'usr_1793796606473_rt9n', display_name: 'nouahle aya', username: 'aya', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-04' },
+  { user_id: 'usr_1793796671229_53u9', display_name: 'bouchera noureddine', username: 'bouchera', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-04' },
+  { user_id: 'usr_1793796789555_jpaj', display_name: 'rahmani mustapha', username: 'mustapha', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-04' },
+  { user_id: 'usr_1794146421915_b5xy', display_name: 'SidAhmed Tahari', username: 'sidahmed', role: 'commercial', phone: '+213', status: 'active', created_at: '2026-11-08' },
 ];
 
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [];
@@ -282,6 +366,30 @@ class StorageManager {
 
       const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (storedSettings) this.settings = JSON.parse(storedSettings);
+
+      // Multi-PC, Mobile & Vercel Auto-Hydration from Central Seed if local storage is empty
+      if (this.prospects.length === 0 && typeof window !== 'undefined') {
+        fetch('/api/database/central-seed')
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.success) {
+              let updated = false;
+              if (Array.isArray(data.prospects) && data.prospects.length > 0) {
+                this.prospects = data.prospects;
+                updated = true;
+              }
+              if (Array.isArray(data.expediteurs) && data.expediteurs.length > 0) {
+                this.expediteurs = data.expediteurs;
+                updated = true;
+              }
+              if (updated) {
+                this.saveToStorage();
+                this.notify();
+              }
+            }
+          })
+          .catch(() => {});
+      }
     } catch (e) {
       console.warn('Could not load from localStorage, using initial memory seed', e);
       this.prospects = [...INITIAL_PROSPECTS];

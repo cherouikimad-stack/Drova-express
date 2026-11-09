@@ -509,6 +509,34 @@ app.get('/api/download-project-zip', (_req, res) => {
   }
 });
 
+// ==============================================================================
+// 5.5 Central Database Backup & Seeding Endpoint (Multi-PC Sync)
+// ==============================================================================
+app.get('/api/database/central-seed', (_req, res) => {
+  try {
+    const backupDir = path.resolve(__dirname, 'data_backup');
+    const prospectsPath = path.join(backupDir, 'prospects.json');
+    const expediteursPath = path.join(backupDir, 'expediteurs.json');
+    const usersPath = path.join(backupDir, 'users.json');
+
+    const prospects = fs.existsSync(prospectsPath) ? JSON.parse(fs.readFileSync(prospectsPath, 'utf8')) : [];
+    const expediteurs = fs.existsSync(expediteursPath) ? JSON.parse(fs.readFileSync(expediteursPath, 'utf8')) : [];
+    const users = fs.existsSync(usersPath) ? JSON.parse(fs.readFileSync(usersPath, 'utf8')) : [];
+
+    res.json({
+      success: true,
+      prospectsCount: prospects.length,
+      expediteursCount: expediteurs.length,
+      usersCount: users.length,
+      prospects,
+      expediteurs,
+      users,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err?.message || 'Error loading seed' });
+  }
+});
+
 // Download URL redirects to ensure users always get the live, updated project
 app.get(['/DROVA_CRM_PRODUCTION_READY.zip', '/drova-crm-production.zip', '/drova-crm-netlify-drop.zip'], (_req, res) => {
   res.redirect('/api/download-project-zip');

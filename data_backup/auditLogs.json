@@ -1,0 +1,2042 @@
+[
+  {
+    "id": "audit_1793542050982_e5o3",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T14:07:30.981Z"
+  },
+  {
+    "id": "audit_1793542086790_b227",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T14:08:06.790Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793545274319_wkoj",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:01:14.319Z"
+  },
+  {
+    "id": "audit_1793545340565_av4a",
+    "details": "إنشاء حساب موظف جديد: mourad kermoula (mourad) دور: commercial_manager",
+    "action": "User Created",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:02:20.565Z"
+  },
+  {
+    "id": "audit_1793545344602_zuey",
+    "timestamp": "2026-11-01T15:02:24.602Z",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793545357190_73dj",
+    "action": "User Login",
+    "timestamp": "2026-11-01T15:02:37.190Z",
+    "details": "تسجيل دخول ناجح للمستخدم mourad kermoula دور: commercial_manager",
+    "user": "mourad kermoula"
+  },
+  {
+    "id": "audit_1793545429970_51oj",
+    "timestamp": "2026-11-01T15:03:49.970Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793545456959_o9py",
+    "action": "Campaign created",
+    "timestamp": "2026-11-01T15:04:16.959Z",
+    "campaign_id": "camp_1793545456959",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793545461184_ueg2",
+    "action": "Batch prospects added",
+    "campaign_id": "camp_1793545456959",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:04:21.184Z",
+    "details": "إضافة 130 تاجر جديد موثق إلى قاعدة البيانات المركزية"
+  },
+  {
+    "id": "audit_1793545582446_bigq",
+    "timestamp": "2026-11-01T15:06:22.446Z",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793545604125_m84l",
+    "user": "mourad kermoula",
+    "timestamp": "2026-11-01T15:06:44.125Z",
+    "details": "تسجيل دخول ناجح للمستخدم mourad kermoula دور: commercial_manager",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793545675496_vt4k",
+    "old_value": "جديد",
+    "user": "mourad kermoula",
+    "details": "تعديل بيانات التاجر: Moda DZ Adrar",
+    "prospect_id": "pros_1793545461163_4t8g7",
+    "new_value": "لم يرد",
+    "timestamp": "2026-11-01T15:07:55.496Z",
+    "action": "Commercial call logged: لم يرد"
+  },
+  {
+    "id": "audit_1793545703474_acqn",
+    "action": "User Logout",
+    "user": "mourad kermoula",
+    "details": "تسجيل خروج للمستخدم mourad kermoula",
+    "timestamp": "2026-11-01T15:08:23.474Z"
+  },
+  {
+    "id": "audit_1793545706524_vwr6",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:08:26.524Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793546099852_22ay",
+    "timestamp": "2026-11-01T15:14:59.852Z",
+    "user": "Cherouik Imad",
+    "details": "إنشاء حساب موظف جديد: abdelkader madoui (abdelkader) دور: commercial",
+    "action": "User Created"
+  },
+  {
+    "id": "audit_1793546116658_31wz",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-01T15:15:16.657Z"
+  },
+  {
+    "id": "audit_1793546121123_kxv1",
+    "timestamp": "2026-11-01T15:15:21.123Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial",
+    "user": "abdelkader madoui"
+  },
+  {
+    "id": "audit_1793546158610_h6yh",
+    "timestamp": "2026-11-01T15:15:58.609Z",
+    "user": "abdelkader madoui",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793546220106_b961",
+    "action": "User Logout",
+    "user": "abdelkader madoui",
+    "details": "تسجيل خروج للمستخدم abdelkader madoui",
+    "timestamp": "2026-11-01T15:17:00.106Z"
+  },
+  {
+    "id": "audit_1793546229076_kp82",
+    "timestamp": "2026-11-01T15:17:09.076Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793546252212_lm9u",
+    "action": "Batch prospects added",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:17:32.212Z",
+    "details": "إضافة 487 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "campaign_id": "manual_excel_import"
+  },
+  {
+    "id": "audit_1793546531551_d3rt",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-01T15:22:11.551Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793546549229_txie",
+    "timestamp": "2026-11-01T15:22:29.229Z",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial",
+    "user": "abdelkader madoui",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793546762662_2cwy",
+    "timestamp": "2026-11-01T15:26:02.662Z",
+    "details": "تسجيل خروج للمستخدم abdelkader madoui",
+    "user": "abdelkader madoui",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1793546770073_9adr",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-01T15:26:10.073Z"
+  },
+  {
+    "id": "audit_1793547396607_irpk",
+    "timestamp": "2026-11-01T15:36:36.607Z",
+    "user": "mourad kermoula",
+    "details": "ملف: DROVA_EXPRESSE_new (1).xlsx | الإجمالي: 1839 (جديد: 1385, موجود: 37, مدمج: 37)",
+    "action": "Imported Expéditeurs from Excel"
+  },
+  {
+    "id": "audit_1793547516584_xy2s",
+    "user": "Cherouik Imad",
+    "details": "إنشاء نسخة احتياطية مشفرة: DROVA_BACKUP_2026-11-01_6577.json (1922 KB)",
+    "action": "Database Backup Created",
+    "timestamp": "2026-11-01T15:38:36.584Z"
+  },
+  {
+    "id": "audit_1793547529680_tjo7",
+    "action": "Bulk Commercial Assignment",
+    "timestamp": "2026-11-01T15:38:49.680Z",
+    "user": "mourad kermoula",
+    "details": "تم إسناد 962 شاحن للممثل التجاري: abdelkader madoui"
+  },
+  {
+    "id": "audit_1793547560936_fds7",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-01T15:39:20.936Z"
+  },
+  {
+    "id": "audit_1793547573209_282c",
+    "action": "User Login",
+    "user": "abdelkader madoui",
+    "timestamp": "2026-11-01T15:39:33.209Z",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial"
+  },
+  {
+    "id": "audit_1793547622010_ydbx",
+    "user": "mourad kermoula",
+    "timestamp": "2026-11-01T15:40:22.010Z",
+    "details": "تم إسناد 11 شاحن للممثل التجاري: Cherouik Imad",
+    "action": "Bulk Commercial Assignment"
+  },
+  {
+    "id": "audit_1793547670107_wuz3",
+    "user": "mourad kermoula",
+    "details": "تم تحديث حالة 962 شاحن تجارياً إلى: [جاهز للاتصال]",
+    "action": "Bulk Expediteur Status Update",
+    "timestamp": "2026-11-01T15:41:10.107Z"
+  },
+  {
+    "id": "audit_1793547680976_xp00",
+    "timestamp": "2026-11-01T15:41:20.976Z",
+    "details": "تسجيل خروج للمستخدم abdelkader madoui",
+    "action": "User Logout",
+    "user": "abdelkader madoui"
+  },
+  {
+    "id": "audit_1793547686443_d88l",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-01T15:41:26.443Z"
+  },
+  {
+    "id": "audit_1793547789824_syrp",
+    "action": "Imported Expéditeurs from Excel",
+    "details": "ملف: DROVA EXPIDITEUR.xlsx | الإجمالي: 1029 (جديد: 477, موجود: 537, مدمج: 537)",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-01T15:43:09.824Z"
+  },
+  {
+    "id": "audit_1793547928909_uig1",
+    "action": "User Logout",
+    "timestamp": "2026-11-01T15:45:28.909Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1793547934586_1oih",
+    "action": "User Login",
+    "user": "abdelkader madoui",
+    "timestamp": "2026-11-01T15:45:34.586Z",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial"
+  },
+  {
+    "id": "audit_1793548015815_ravv",
+    "details": "تسجيل خروج للمستخدم abdelkader madoui",
+    "user": "abdelkader madoui",
+    "timestamp": "2026-11-01T15:46:55.815Z",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1793548019836_s05y",
+    "user": "abdelkader madoui",
+    "timestamp": "2026-11-01T15:46:59.836Z",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793548026926_i3y9",
+    "timestamp": "2026-11-01T15:47:06.926Z",
+    "user": "abdelkader madoui",
+    "details": "تسجيل خروج للمستخدم abdelkader madoui",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1793548045773_liz2",
+    "timestamp": "2026-11-01T15:47:25.773Z",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793554157299_w0ec",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-01T17:29:17.299Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793565153230_rhsz",
+    "timestamp": "2026-11-01T20:32:33.230Z",
+    "campaign_id": "camp_1793565153230",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار  للشحن السريع",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793610331607_d4rc",
+    "campaign_id": "camp_1793610331607",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T09:05:31.607Z",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "action": "Campaign created"
+  },
+  {
+    "id": "audit_1793610334951_ccci",
+    "campaign_id": "camp_1793610331607",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T09:05:34.951Z",
+    "details": "إضافة 60 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "action": "Batch prospects added"
+  },
+  {
+    "id": "audit_1793610590759_pt6a",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "timestamp": "2026-11-02T09:09:50.758Z",
+    "campaign_id": "camp_1793610590758",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793610595928_psw7",
+    "timestamp": "2026-11-02T09:09:55.928Z",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793610590758",
+    "action": "Batch prospects added"
+  },
+  {
+    "id": "audit_1793610670032_5s7l",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793610670032",
+    "timestamp": "2026-11-02T09:11:10.032Z",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع"
+  },
+  {
+    "id": "audit_1793610673121_coz4",
+    "campaign_id": "camp_1793610670032",
+    "timestamp": "2026-11-02T09:11:13.121Z",
+    "details": "إضافة 60 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "user": "Cherouik Imad",
+    "action": "Batch prospects added"
+  },
+  {
+    "id": "audit_1793611020667_s7v3",
+    "details": "ملف: DROVA EXPIDITEUR-2.xlsx | الإجمالي: 1362 (جديد: 393, موجود: 951, مدمج: 0)",
+    "action": "Imported Expéditeurs from Excel",
+    "timestamp": "2026-11-02T09:17:00.667Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793612942559_58aj",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T09:49:02.559Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793613689155_miee",
+    "timestamp": "2026-11-02T10:01:29.155Z",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793613689155"
+  },
+  {
+    "id": "audit_1793613824813_lpen",
+    "campaign_id": "camp_1793613824813",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T10:03:44.813Z",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع"
+  },
+  {
+    "id": "audit_1793613832895_d2xv",
+    "campaign_id": "camp_1793613824813",
+    "details": "إضافة 5037 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "timestamp": "2026-11-02T10:03:52.895Z",
+    "user": "Cherouik Imad",
+    "action": "Batch prospects added"
+  },
+  {
+    "id": "audit_1793614418266_31a0",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T10:13:38.266Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793614439191_32jf",
+    "campaign_id": "camp_1793614439191",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T10:13:59.191Z"
+  },
+  {
+    "id": "audit_1793615210715_coin",
+    "campaign_id": "camp_1793614439191",
+    "action": "Batch prospects added",
+    "timestamp": "2026-11-02T10:26:50.715Z",
+    "user": "Cherouik Imad",
+    "details": "إضافة 42991 تاجر جديد موثق إلى قاعدة البيانات المركزية"
+  },
+  {
+    "id": "audit_1793616178421_115w",
+    "timestamp": "2026-11-02T10:42:58.420Z",
+    "action": "Campaign created",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793616178420",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع"
+  },
+  {
+    "id": "audit_1793616192533_mdbw",
+    "details": "إضافة 10005 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T10:43:12.533Z",
+    "campaign_id": "camp_1793616178420",
+    "action": "Batch prospects added"
+  },
+  {
+    "id": "audit_1793616244523_5bfd",
+    "details": "تمت محاصصة وتوزيع 10005 تاجراً على 3 ممثلين تجاريين (mourad kermoula: 3335، abdelkader madoui: 3335، Cherouik Imad: 3335) بنمط [تقسيم بالتساوي]",
+    "action": "Bulk Prospects Quota Distribution",
+    "timestamp": "2026-11-02T10:44:04.523Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793616738087_qtkf",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-02T10:52:18.087Z"
+  },
+  {
+    "id": "audit_1793616740421_wemd",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T10:52:20.421Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793626740385_rcdm",
+    "timestamp": "2026-11-02T13:39:00.385Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793628313817_vgg4",
+    "details": "تم تنظيف وحذف 2473 سجلاً تجريبياً مولداً برمجياً والإبقاء على 487 تاجر حقيقي موثق ومستورد.",
+    "action": "Clean Simulated Data",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T14:05:13.817Z"
+  },
+  {
+    "id": "audit_1793629003174_0qsw",
+    "details": "ملف: DROVA EXPIDITEUR-2.xlsx | الإجمالي: 1362 (جديد: 75, موجود: 1269, مدمج: 1269)",
+    "action": "Imported Expéditeurs from Excel",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T14:16:43.174Z"
+  },
+  {
+    "id": "audit_1793629642276_0an5",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "action": "Campaign created",
+    "timestamp": "2026-11-02T14:27:22.276Z",
+    "campaign_id": "camp_1793629642276",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793629644718_2nyj",
+    "campaign_id": "camp_1793629642276",
+    "action": "Batch prospects added",
+    "timestamp": "2026-11-02T14:27:24.718Z",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793629672791_3qae",
+    "user": "Cherouik Imad",
+    "details": "ملف: DROVA EXPIDITEUR-2.xlsx | الإجمالي: 1362 (جديد: 70, موجود: 1274, مدمج: 0)",
+    "timestamp": "2026-11-02T14:27:52.791Z",
+    "action": "Imported Expéditeurs from Excel"
+  },
+  {
+    "id": "audit_1793631644455_qsm3",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "timestamp": "2026-11-02T15:00:44.455Z"
+  },
+  {
+    "id": "audit_1793631665668_vnxu",
+    "timestamp": "2026-11-02T15:01:05.668Z",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793631665668"
+  },
+  {
+    "id": "audit_1793648544451_vfql",
+    "user": "Cherouik Imad",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "timestamp": "2026-11-02T19:42:24.451Z",
+    "action": "Campaign created",
+    "campaign_id": "camp_1793648544451"
+  },
+  {
+    "id": "audit_1793649242278_x50k",
+    "action": "Campaign created",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-02T19:54:02.278Z",
+    "campaign_id": "camp_1793649242278",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع"
+  },
+  {
+    "id": "audit_1793649245658_krk7",
+    "timestamp": "2026-11-02T19:54:05.658Z",
+    "campaign_id": "camp_1793649242278",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "action": "Batch prospects added",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793649282080_uwem",
+    "user": "Cherouik Imad",
+    "action": "Settings updated",
+    "timestamp": "2026-11-02T19:54:42.080Z",
+    "details": "تحديث معايير التأهيل والتصنيف وضوابط الجودة"
+  },
+  {
+    "id": "audit_1793649282093_piy1",
+    "action": "Discovery API Keys Updated",
+    "timestamp": "2026-11-02T19:54:42.093Z",
+    "details": "تم حفظ مفاتيح الاستكشاف: Google Places (مضبوط)، Meta Ads (فارغ)",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793649286720_a0vc",
+    "details": "تحديث معايير التأهيل والتصنيف وضوابط الجودة",
+    "timestamp": "2026-11-02T19:54:46.720Z",
+    "user": "Cherouik Imad",
+    "action": "Settings updated"
+  },
+  {
+    "id": "audit_1793649286729_nf82",
+    "timestamp": "2026-11-02T19:54:46.729Z",
+    "action": "Discovery API Keys Updated",
+    "user": "Cherouik Imad",
+    "details": "تم حفظ مفاتيح الاستكشاف: Google Places (مضبوط)، Meta Ads (فارغ)"
+  },
+  {
+    "id": "audit_1793649329429_fjle",
+    "timestamp": "2026-11-02T19:55:29.429Z",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793649329429"
+  },
+  {
+    "id": "audit_1793649356382_4w0c",
+    "campaign_id": "camp_1793649329429",
+    "user": "Cherouik Imad",
+    "action": "Batch prospects added",
+    "details": "إضافة 69 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "timestamp": "2026-11-02T19:55:56.382Z"
+  },
+  {
+    "id": "audit_1793649382597_kn01",
+    "action": "Bulk Prospects Quota Distribution",
+    "timestamp": "2026-11-02T19:56:22.597Z",
+    "details": "تمت محاصصة وتوزيع 69 تاجراً على 3 ممثلين تجاريين (mourad kermoula: 23، abdelkader madoui: 23، Cherouik Imad: 23) بنمط [تقسيم بالتساوي]",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793711689152_r587",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-03T13:14:49.152Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793711691150_i2pl",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "timestamp": "2026-11-03T13:14:51.150Z"
+  },
+  {
+    "id": "audit_1793711742194_1l40",
+    "action": "User Login",
+    "timestamp": "2026-11-03T13:15:42.194Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793714275724_fox0",
+    "campaign_id": "camp_1793714275724",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "timestamp": "2026-11-03T13:57:55.724Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793714305673_f1y4",
+    "action": "Batch prospects added",
+    "campaign_id": "camp_1793714275724",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-03T13:58:25.673Z",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية"
+  },
+  {
+    "id": "audit_1793714462884_8ymm",
+    "user": "Cherouik Imad",
+    "action": "Campaign created",
+    "timestamp": "2026-11-03T14:01:02.884Z",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "campaign_id": "camp_1793714462884"
+  },
+  {
+    "id": "audit_1793717833217_f70w",
+    "campaign_id": "camp_1793717833216",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "action": "Campaign created",
+    "timestamp": "2026-11-03T14:57:13.217Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793717858545_fvcd",
+    "campaign_id": "camp_1793717833216",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "user": "Cherouik Imad",
+    "action": "Batch prospects added",
+    "timestamp": "2026-11-03T14:57:38.545Z"
+  },
+  {
+    "id": "audit_1793719978301_xcxt",
+    "action": "Batch prospects added",
+    "timestamp": "2026-11-03T15:32:58.301Z",
+    "details": "إضافة 3053 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "campaign_id": "manual_excel_import",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720787127_pyny",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-03T15:46:27.127Z",
+    "user": "Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1793720801941_us8r",
+    "timestamp": "2026-11-03T15:46:41.941Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720812940_8zvt",
+    "timestamp": "2026-11-03T15:46:52.940Z",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720839815_rcg5",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-03T15:47:19.815Z"
+  },
+  {
+    "id": "audit_1793720871302_r3we",
+    "details": "إعادة تعيين كلمة مرور المستخدم abdelkader madoui (abdelkader) بصيغة مشفرة",
+    "action": "Password Reset",
+    "timestamp": "2026-11-03T15:47:51.302Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720874694_prjg",
+    "action": "User Logout",
+    "timestamp": "2026-11-03T15:47:54.694Z",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720895538_96se",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "timestamp": "2026-11-03T15:48:15.538Z"
+  },
+  {
+    "id": "audit_1793720942187_5q8f",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-03T15:49:02.187Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793720949115_rqou",
+    "user": "abdelkader madoui",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madoui دور: commercial",
+    "timestamp": "2026-11-03T15:49:09.115Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793728912101_b2c7",
+    "timestamp": "2026-11-03T18:01:52.100Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793728934161_1gw5",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-03T18:02:14.161Z"
+  },
+  {
+    "id": "audit_1793738712454_pg8q",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-03T20:45:12.454Z",
+    "action": "User Logout",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793738720078_lqa1",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-03T20:45:20.078Z"
+  },
+  {
+    "id": "audit_1793784818382_ydwq",
+    "timestamp": "2026-11-04T09:33:38.382Z",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793789749003_8cj9",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-04T10:55:49.003Z"
+  },
+  {
+    "id": "audit_1793789800618_sc70",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1793789800618",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار للشحن السريع",
+    "action": "Campaign created",
+    "timestamp": "2026-11-04T10:56:40.618Z"
+  },
+  {
+    "id": "audit_1793789833720_jtqj",
+    "timestamp": "2026-11-04T10:57:13.720Z",
+    "campaign_id": "camp_1793789800618",
+    "details": "إضافة 209 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "action": "Batch prospects added",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793790039347_dav9",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T11:00:39.347Z",
+    "prospect_id": "pros_manual_1793790039346_d9koe",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة Cherouik Imad: boutique imad (+213677766677) - ولاية تيزي وزو"
+  },
+  {
+    "id": "audit_1793790742807_ru51",
+    "action": "User Login",
+    "timestamp": "2026-11-04T11:12:22.807Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793790757376_jwzx",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-04T11:12:37.376Z"
+  },
+  {
+    "id": "audit_1793790791535_79h1",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-04T11:13:11.535Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793790826881_rbl8",
+    "timestamp": "2026-11-04T11:13:46.881Z",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793791489779_i977",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T11:24:49.779Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793791581265_sryr",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T11:26:21.264Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793791602043_cdjv",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-04T11:26:42.043Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793791614998_ay1q",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T11:26:54.998Z"
+  },
+  {
+    "id": "audit_1793791624735_b9pm",
+    "action": "User Deleted Safely",
+    "details": "حذف حساب المستخدم abdelkader madoui (abdelkader) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T11:27:04.735Z"
+  },
+  {
+    "id": "audit_1793791642155_xmii",
+    "action": "User Created",
+    "user": "Cherouik Imad",
+    "details": "إنشاء حساب موظف جديد: abdelkader madouik (abdelkader) دور: commercial",
+    "timestamp": "2026-11-04T11:27:22.155Z"
+  },
+  {
+    "id": "audit_1793791644996_raxd",
+    "action": "User Logout",
+    "timestamp": "2026-11-04T11:27:24.996Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1793791649186_vgix",
+    "user": "abdelkader madouik",
+    "action": "User Login",
+    "timestamp": "2026-11-04T11:27:29.186Z",
+    "details": "تسجيل دخول ناجح للمستخدم abdelkader madouik دور: commercial"
+  },
+  {
+    "id": "audit_1793791821798_xob0",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-04T11:30:21.798Z"
+  },
+  {
+    "id": "audit_1793794447674_nu3d",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم abdelkader madouik",
+    "user": "abdelkader madouik",
+    "timestamp": "2026-11-04T12:14:07.674Z"
+  },
+  {
+    "id": "audit_1793794455504_wd2m",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:14:15.504Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793794689861_yjma",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-04T12:18:09.861Z",
+    "action": "User Logout",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793794692966_25u5",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:18:12.966Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793794696085_cgb7",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:18:16.085Z"
+  },
+  {
+    "id": "audit_1793794711267_ilz0",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-04T12:18:31.267Z"
+  },
+  {
+    "id": "audit_1793794769249_4cy7",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "timestamp": "2026-11-04T12:19:29.249Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1793794771034_4q2e",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: sidahmed tahari (sidahmed) دور: commercial",
+    "timestamp": "2026-11-04T12:19:31.034Z"
+  },
+  {
+    "id": "audit_1793794772757_8rdg",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: sidahmed tahari (sidahmed) دور: commercial",
+    "timestamp": "2026-11-04T12:19:32.757Z"
+  },
+  {
+    "id": "audit_1793794773666_3e7t",
+    "timestamp": "2026-11-04T12:19:33.666Z",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: sidahmed tahari (sidahmed) دور: commercial",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793794786363_qkbt",
+    "user": "Cherouik Imad",
+    "details": "حذف حساب المستخدم sidahmed tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "action": "User Deleted Safely",
+    "timestamp": "2026-11-04T12:19:46.363Z"
+  },
+  {
+    "id": "audit_1793794790105_3ld3",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-04T12:19:50.105Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793794873305_4ent",
+    "timestamp": "2026-11-04T12:21:13.304Z",
+    "user": "Cherouik Imad",
+    "details": "حذف حساب المستخدم sidahmed tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "action": "User Deleted Safely"
+  },
+  {
+    "id": "audit_1793794878531_osaj",
+    "action": "User Deleted Safely",
+    "details": "حذف حساب المستخدم sidahmed tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "timestamp": "2026-11-04T12:21:18.531Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793794906165_7lah",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: sidahmed tahari (sidahmed) دور: commercial",
+    "timestamp": "2026-11-04T12:21:46.165Z"
+  },
+  {
+    "id": "audit_1793794911606_3tvy",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-04T12:21:51.606Z"
+  },
+  {
+    "id": "audit_1793794926617_acy4",
+    "user": "sidahmed tahari",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial",
+    "timestamp": "2026-11-04T12:22:06.617Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1793795273172_o0ll",
+    "user": "sidahmed tahari",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "timestamp": "2026-11-04T12:27:53.172Z"
+  },
+  {
+    "id": "audit_1793795295110_u5yn",
+    "action": "User Login",
+    "user": "sidahmed tahari",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial",
+    "timestamp": "2026-11-04T12:28:15.110Z"
+  },
+  {
+    "id": "audit_1793795639333_hqo3",
+    "prospect_id": "pros_1793795639333_rr8r",
+    "action": "Prospect created manually",
+    "timestamp": "2026-11-04T12:33:59.333Z",
+    "details": "إضافة التاجر الجديد: افرشة عصرية (غليزان) بواسطة sidahmed tahari",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1793795742581_c4bn",
+    "prospect_id": "pros_1793795742581_gov1",
+    "timestamp": "2026-11-04T12:35:42.581Z",
+    "details": "إضافة التاجر الجديد: matelas allemand (الجزائر العاصمة) بواسطة sidahmed tahari",
+    "action": "Prospect created manually",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1793795819726_rf2k",
+    "timestamp": "2026-11-04T12:36:59.726Z",
+    "details": "إضافة التاجر الجديد: full moon (البليدة) بواسطة sidahmed tahari",
+    "action": "Prospect created manually",
+    "prospect_id": "pros_1793795819726_1ydb",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1793795971702_1ina",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "action": "User Logout",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-04T12:39:31.701Z"
+  },
+  {
+    "id": "audit_1793795976762_7i2w",
+    "timestamp": "2026-11-04T12:39:36.762Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793796140834_6x6t",
+    "timestamp": "2026-11-04T12:42:20.834Z",
+    "user": "sidahmed tahari",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: افرشة رازان قمر الزمان (+213770585520) - ولاية قسنطينة",
+    "prospect_id": "pros_manual_1793796140833_0s3t1",
+    "action": "Manual Merchant Added"
+  },
+  {
+    "id": "audit_1793796393073_oubf",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: hassena raggab (hassena) دور: commercial",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:46:33.073Z"
+  },
+  {
+    "id": "audit_1793796427605_eb6l",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:47:07.605Z",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: ahlam mokdad (ahlam) دور: commercial"
+  },
+  {
+    "id": "audit_1793796606473_wbhu",
+    "timestamp": "2026-11-04T12:50:06.473Z",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: nouahle aya (aya) دور: commercial"
+  },
+  {
+    "id": "audit_1793796671229_gn4d",
+    "details": "إنشاء حساب موظف جديد: bouchera noureddine (bouchera) دور: commercial",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "timestamp": "2026-11-04T12:51:11.229Z"
+  },
+  {
+    "id": "audit_1793796789555_p1h9",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: rahmani mustapha (mustapha) دور: commercial",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-04T12:53:09.555Z"
+  },
+  {
+    "id": "audit_1793980140417_qtmr",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "campaign_id": "camp_1793980140417",
+    "timestamp": "2026-11-06T15:49:00.417Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793980184909_gqtv",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-06T15:49:44.909Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793980191649_akl8",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-06T15:49:51.649Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1793990004284_l37h",
+    "timestamp": "2026-11-06T18:33:24.284Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1793990024975_rj1e",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-06T18:33:44.975Z"
+  },
+  {
+    "id": "audit_1794134139405_dnug",
+    "action": "User Login",
+    "timestamp": "2026-11-08T10:35:39.405Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794135554883_x3dj",
+    "timestamp": "2026-11-08T10:59:14.883Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794138962578_4cax",
+    "timestamp": "2026-11-08T11:56:02.577Z",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794138971360_4wt0",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T11:56:11.360Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794140054083_6iv3",
+    "timestamp": "2026-11-08T12:14:14.083Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794140089764_bie4",
+    "action": "Campaign created",
+    "timestamp": "2026-11-08T12:14:49.764Z",
+    "campaign_id": "camp_1794140089764",
+    "user": "Cherouik Imad",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع"
+  },
+  {
+    "id": "audit_1794140184692_u2rr",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "action": "Batch prospects added",
+    "campaign_id": "camp_1794140089764",
+    "timestamp": "2026-11-08T12:16:24.692Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794142333050_ynb8",
+    "user": "Cherouik Imad",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "timestamp": "2026-11-08T12:52:13.050Z",
+    "campaign_id": "camp_1794142333050",
+    "action": "Campaign created"
+  },
+  {
+    "id": "audit_1794142391801_8e0p",
+    "user": "Cherouik Imad",
+    "action": "Batch prospects added",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "timestamp": "2026-11-08T12:53:11.801Z",
+    "campaign_id": "camp_1794142333050"
+  },
+  {
+    "id": "audit_1794143296535_i3ck",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:08:16.534Z",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Rollensan (+213557309479) - ولاية الجزائر العاصمة",
+    "prospect_id": "pros_manual_1794143296534_as20f"
+  },
+  {
+    "id": "audit_1794143506518_6f38",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:11:46.518Z",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Rollensan (+213557309479) - ولاية الجزائر العاصمة",
+    "prospect_id": "pros_manual_1794143506518_ks3k5"
+  },
+  {
+    "id": "audit_1794143546054_of3k",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794143546054_mutkf",
+    "timestamp": "2026-11-08T13:12:26.054Z",
+    "user": "sidahmed tahari",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Rollensan (+213557309479) - ولاية الجزائر العاصمة"
+  },
+  {
+    "id": "audit_1794143692142_e4xw",
+    "prospect_id": "pros_manual_1794143692141_jg9zz",
+    "timestamp": "2026-11-08T13:14:52.142Z",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Glimmery shop (+213793414409) - ولاية وهران",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794143720342_gcu4",
+    "timestamp": "2026-11-08T13:15:20.342Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Glimmery shop (+213793414409) - ولاية وهران",
+    "action": "Manual Merchant Added",
+    "user": "sidahmed tahari",
+    "prospect_id": "pros_manual_1794143720342_ogyf8"
+  },
+  {
+    "id": "audit_1794143836014_wmml",
+    "timestamp": "2026-11-08T13:17:16.014Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Costume بالجملة (+213561290360) - ولاية الجزائر العاصمة",
+    "user": "sidahmed tahari",
+    "prospect_id": "pros_manual_1794143836014_a94gn",
+    "action": "Manual Merchant Added"
+  },
+  {
+    "id": "audit_1794143995446_3ubm",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:19:55.446Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Beauty Tech (+213561501169) - ولاية الجزائر العاصمة",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794143995446_ru5ic"
+  },
+  {
+    "id": "audit_1794144002333_65l9",
+    "campaign_id": "camp_1794144002333",
+    "action": "Campaign created",
+    "details": "إنشاء حملة استكشاف مستهدفة: حملة استكشاف تجار الأغواط للشحن السريع",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T13:20:02.333Z"
+  },
+  {
+    "id": "audit_1794144006226_38gj",
+    "user": "Cherouik Imad",
+    "campaign_id": "camp_1794144002333",
+    "details": "إضافة 0 تاجر جديد موثق إلى قاعدة البيانات المركزية",
+    "action": "Batch prospects added",
+    "timestamp": "2026-11-08T13:20:06.226Z"
+  },
+  {
+    "id": "audit_1794144106813_0ep2",
+    "timestamp": "2026-11-08T13:21:46.813Z",
+    "user": "sidahmed tahari",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794144106813_mn4ep",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: IK STORE (+213672705956) - ولاية الجزائر العاصمة"
+  },
+  {
+    "id": "audit_1794144158782_glc0",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T13:22:38.782Z"
+  },
+  {
+    "id": "audit_1794144258989_y7h0",
+    "user": "sidahmed tahari",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: MONDO DESK (+213558659463) - ولاية الجزائر العاصمة",
+    "prospect_id": "pros_manual_1794144258989_ctreo",
+    "timestamp": "2026-11-08T13:24:18.989Z"
+  },
+  {
+    "id": "audit_1794144409198_27xp",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:26:49.198Z",
+    "user": "sidahmed tahari",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Melou jewelry (+213541865998) - ولاية الجزائر العاصمة",
+    "prospect_id": "pros_manual_1794144409197_hkbu5"
+  },
+  {
+    "id": "audit_1794144500750_3byp",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:28:20.750Z",
+    "prospect_id": "pros_manual_1794144500750_3snh6",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Biomax Labs - مختبرات بيوماكس (+213563678106) - ولاية الجزائر العاصمة"
+  },
+  {
+    "id": "audit_1794144686765_9nbc",
+    "timestamp": "2026-11-08T13:31:26.765Z",
+    "user": "sidahmed tahari",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Babaha shop (+213671910335) - ولاية سطيف",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794144686765_48k2v"
+  },
+  {
+    "id": "audit_1794144848637_xdax",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Babaha shop (+213671910335) - ولاية سطيف",
+    "timestamp": "2026-11-08T13:34:08.637Z",
+    "user": "sidahmed tahari",
+    "prospect_id": "pros_manual_1794144848637_f96hu"
+  },
+  {
+    "id": "audit_1794144941669_03yc",
+    "user": "sidahmed tahari",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:35:41.669Z",
+    "prospect_id": "pros_manual_1794144941669_nuk7d",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Lillou boutique dz (+213770181591) - ولاية الجزائر العاصمة"
+  },
+  {
+    "id": "audit_1794145012207_netd",
+    "timestamp": "2026-11-08T13:36:52.207Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794145014958_kyif",
+    "prospect_id": "pros_manual_1794145014958_n4lh8",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:36:54.958Z",
+    "user": "sidahmed tahari",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Production Est (+213563207223) - ولاية سطيف"
+  },
+  {
+    "id": "audit_1794145017960_4eg2",
+    "timestamp": "2026-11-08T13:36:57.960Z",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial",
+    "user": "sidahmed tahari",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794145036603_h2xk",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:37:16.603Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: iPad iPad (+213676767677) - ولاية الجزائر",
+    "prospect_id": "pros_manual_1794145036603_hfisx",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145044727_4z1c",
+    "prospect_id": "pros_manual_1794145044727_udhb1",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:37:24.727Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: iPad iPad (+213676767677) - ولاية الجزائر",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145055287_hpig",
+    "timestamp": "2026-11-08T13:37:35.287Z",
+    "user": "sidahmed tahari",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145058140_td6t",
+    "action": "User Login",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:37:38.140Z",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial"
+  },
+  {
+    "id": "audit_1794145099487_fvel",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794145099487_p3efm",
+    "timestamp": "2026-11-08T13:38:19.487Z",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: boutique (+213775678913) - ولاية الجزائر",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145102232_6j0f",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:38:22.232Z",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794145107913_odvd",
+    "timestamp": "2026-11-08T13:38:27.913Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794145137845_cotr",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T13:38:57.845Z",
+    "user": "Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794145142657_vvr2",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:39:02.657Z"
+  },
+  {
+    "id": "audit_1794145160741_y4a9",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: Le meilleur pour toi (+213557670432) - ولاية الجزائر العاصمة",
+    "user": "sidahmed tahari",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794145160741_pc115",
+    "timestamp": "2026-11-08T13:39:20.741Z"
+  },
+  {
+    "id": "audit_1794145161570_eyro",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: iPad a (+213786666892) - ولاية الجزائر",
+    "timestamp": "2026-11-08T13:39:21.570Z",
+    "action": "Manual Merchant Added",
+    "user": "sidahmed tahari",
+    "prospect_id": "pros_manual_1794145161570_8ok1x"
+  },
+  {
+    "id": "audit_1794145165215_bqx6",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "timestamp": "2026-11-08T13:39:25.215Z",
+    "action": "User Logout",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145169663_sv34",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T13:39:29.663Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794145180048_1gs1",
+    "timestamp": "2026-11-08T13:39:40.048Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794145183636_xoq0",
+    "user": "sidahmed tahari",
+    "timestamp": "2026-11-08T13:39:43.636Z",
+    "details": "تسجيل دخول ناجح للمستخدم sidahmed tahari دور: commercial",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794145206316_p67y",
+    "details": "إضافة تاجر يدوياً بواسطة sidahmed tahari: ezkjfhbezjkfbjkez (+213682777833) - ولاية الجزائر",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794145206316_p9gtp",
+    "timestamp": "2026-11-08T13:40:06.316Z",
+    "user": "sidahmed tahari"
+  },
+  {
+    "id": "audit_1794145216472_5hjl",
+    "timestamp": "2026-11-08T13:40:16.472Z",
+    "user": "sidahmed tahari",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794145223556_nb0f",
+    "timestamp": "2026-11-08T13:40:23.556Z",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794145244446_sh6z",
+    "user": "Cherouik Imad",
+    "details": "تحديث بيانات المستخدم sidahmed tahari (sidahmed)",
+    "action": "User Updated",
+    "timestamp": "2026-11-08T13:40:44.446Z"
+  },
+  {
+    "id": "audit_1794145250186_sc1b",
+    "action": "User Deleted Safely",
+    "timestamp": "2026-11-08T13:40:50.186Z",
+    "details": "حذف حساب المستخدم sidahmed tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794145264943_jdly",
+    "timestamp": "2026-11-08T13:41:04.943Z",
+    "details": "إنشاء حساب موظف جديد: Sidahmed (sidahmed) دور: commercial",
+    "user": "Cherouik Imad",
+    "action": "User Created"
+  },
+  {
+    "id": "audit_1794145268011_r8y6",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T13:41:08.011Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794145271488_2syi",
+    "user": "Sidahmed",
+    "action": "User Login",
+    "timestamp": "2026-11-08T13:41:11.488Z",
+    "details": "تسجيل دخول ناجح للمستخدم Sidahmed دور: commercial"
+  },
+  {
+    "id": "audit_1794145284300_jyh5",
+    "timestamp": "2026-11-08T13:41:24.300Z",
+    "action": "Manual Merchant Added",
+    "user": "Sidahmed",
+    "prospect_id": "pros_manual_1794145284300_lxvwo",
+    "details": "إضافة تاجر يدوياً بواسطة Sidahmed: ipadehjkbej (+213677878787) - ولاية الجزائر"
+  },
+  {
+    "id": "audit_1794145292978_ltlt",
+    "timestamp": "2026-11-08T13:41:32.978Z",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794145292978_3p97r",
+    "user": "Sidahmed",
+    "details": "إضافة تاجر يدوياً بواسطة Sidahmed: ipadehjkbej (+213677878787) - ولاية الجزائر"
+  },
+  {
+    "id": "audit_1794145309958_ydrs",
+    "timestamp": "2026-11-08T13:41:49.958Z",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة Sidahmed: ipadehjkbej (+213677878787) - ولاية الجزائر",
+    "user": "Sidahmed",
+    "prospect_id": "pros_manual_1794145309958_yws9l"
+  },
+  {
+    "id": "audit_1794145313694_k0ea",
+    "details": "تسجيل خروج للمستخدم Sidahmed",
+    "timestamp": "2026-11-08T13:41:53.694Z",
+    "action": "User Logout",
+    "user": "Sidahmed"
+  },
+  {
+    "id": "audit_1794146283244_gynl",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T13:58:03.244Z"
+  },
+  {
+    "id": "audit_1794146304226_zvom",
+    "user": "Cherouik Imad",
+    "prospect_id": "pros_manual_1794146304225_7rg9i",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة Cherouik Imad: iPadjabzdj (+213778787989) - ولاية بشار",
+    "timestamp": "2026-11-08T13:58:24.226Z"
+  },
+  {
+    "id": "audit_1794146314149_m307",
+    "user": "Cherouik Imad",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794146314149_q10v6",
+    "timestamp": "2026-11-08T13:58:34.149Z",
+    "details": "إضافة تاجر يدوياً بواسطة Cherouik Imad: imadimad (+213778787989) - ولاية بشار"
+  },
+  {
+    "id": "audit_1794146321851_njf4",
+    "details": "إضافة تاجر يدوياً بواسطة Cherouik Imad: drova (+213778787989) - ولاية بشار",
+    "prospect_id": "pros_manual_1794146321851_4rpv3",
+    "timestamp": "2026-11-08T13:58:41.851Z",
+    "user": "Cherouik Imad",
+    "action": "Manual Merchant Added"
+  },
+  {
+    "id": "audit_1794146327418_bnv7",
+    "action": "Manual Merchant Added",
+    "timestamp": "2026-11-08T13:58:47.418Z",
+    "prospect_id": "pros_manual_1794146327418_jt1if",
+    "details": "إضافة تاجر يدوياً بواسطة Cherouik Imad: drova com (+213778787989) - ولاية بشار",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794146342035_m9e4",
+    "timestamp": "2026-11-08T13:59:02.035Z",
+    "details": "تحديث بيانات المستخدم Sidahmed (sidahmed)",
+    "action": "User Updated",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794146343151_h5lg",
+    "action": "User Updated",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T13:59:03.151Z",
+    "details": "تحديث بيانات المستخدم Sidahmed (sidahmed)"
+  },
+  {
+    "id": "audit_1794146346168_i1ep",
+    "details": "حذف حساب المستخدم Sidahmed (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "action": "User Deleted Safely",
+    "timestamp": "2026-11-08T13:59:06.168Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794146360354_es96",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: sidahmed tahari (sidahmed) دور: commercial",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T13:59:20.354Z"
+  },
+  {
+    "id": "audit_1794146365052_gbhx",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T13:59:25.052Z",
+    "user": "Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794146382375_5adg",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T13:59:42.375Z",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794146402413_6xe2",
+    "user": "Cherouik Imad",
+    "action": "User Deleted Safely",
+    "timestamp": "2026-11-08T14:00:02.413Z",
+    "details": "حذف حساب المستخدم sidahmed tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي"
+  },
+  {
+    "id": "audit_1794146421915_i0pw",
+    "timestamp": "2026-11-08T14:00:21.915Z",
+    "user": "Cherouik Imad",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: SidAhmed Tahari (sidahmed) دور: commercial"
+  },
+  {
+    "id": "audit_1794146462370_lf92",
+    "timestamp": "2026-11-08T14:01:02.370Z",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794146522580_3us4",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:02:02.580Z"
+  },
+  {
+    "id": "audit_1794146557374_sa78",
+    "user": "Cherouik Imad",
+    "details": "إعادة تعيين كلمة مرور المستخدم SidAhmed Tahari (sidahmed) بصيغة مشفرة",
+    "action": "Password Reset",
+    "timestamp": "2026-11-08T14:02:37.374Z"
+  },
+  {
+    "id": "audit_1794146563390_r9d2",
+    "timestamp": "2026-11-08T14:02:43.390Z",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "user": "Cherouik Imad",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794146660771_jlfw",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T14:04:20.771Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794146673369_ewo8",
+    "action": "User Deleted Safely",
+    "details": "حذف حساب المستخدم mourad kermoula (mourad) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "timestamp": "2026-11-08T14:04:33.369Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794146676762_2nnt",
+    "details": "حذف حساب المستخدم abdelkader madouik (abdelkader) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "user": "Cherouik Imad",
+    "action": "User Deleted Safely",
+    "timestamp": "2026-11-08T14:04:36.762Z"
+  },
+  {
+    "id": "audit_1794146856965_uovr",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T14:07:36.965Z"
+  },
+  {
+    "id": "audit_1794146885938_clc7",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T14:08:05.938Z"
+  },
+  {
+    "id": "audit_1794147166631_wkub",
+    "action": "User Logout",
+    "timestamp": "2026-11-08T14:12:46.631Z",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794147182086_427a",
+    "timestamp": "2026-11-08T14:13:02.086Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794147205610_g32w",
+    "user": "Cherouik Imad",
+    "action": "User Updated",
+    "timestamp": "2026-11-08T14:13:25.610Z",
+    "details": "تحديث بيانات المستخدم SidAhmed Tahari (sidahmed)"
+  },
+  {
+    "id": "audit_1794147228562_i3ro",
+    "timestamp": "2026-11-08T14:13:48.562Z",
+    "details": "حذف حساب المستخدم SidAhmed Tahari (sidahmed) وإعادة تعيين تجاره للمسؤول الرئيسي",
+    "action": "User Deleted Safely",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794147243099_7ehz",
+    "action": "User Created",
+    "details": "إنشاء حساب موظف جديد: SidAhmed TAhari (sidahmed) دور: commercial",
+    "timestamp": "2026-11-08T14:14:03.099Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794147244948_y2yk",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-08T14:14:04.948Z",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794147248047_gxke",
+    "details": "تسجيل دخول ناجح للمستخدم SidAhmed TAhari دور: commercial",
+    "timestamp": "2026-11-08T14:14:08.047Z",
+    "user": "SidAhmed TAhari",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794147264923_4tde",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed TAhari: hhhhhh (+213676667777) - ولاية الجزائر",
+    "prospect_id": "pros_manual_1794147264922_ftb7f",
+    "user": "SidAhmed TAhari",
+    "timestamp": "2026-11-08T14:14:24.923Z"
+  },
+  {
+    "id": "audit_1794147278888_wu8z",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed TAhari: imadaimad (+213777676767) - ولاية الجزائر",
+    "prospect_id": "pros_manual_1794147278887_tctwb",
+    "timestamp": "2026-11-08T14:14:38.888Z",
+    "user": "SidAhmed TAhari",
+    "action": "Manual Merchant Added"
+  },
+  {
+    "id": "audit_1794147285020_uvkx",
+    "user": "SidAhmed TAhari",
+    "timestamp": "2026-11-08T14:14:45.020Z",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم SidAhmed TAhari"
+  },
+  {
+    "id": "audit_1794147307803_f8kp",
+    "user": "sidahmed tahari",
+    "details": "تسجيل خروج للمستخدم sidahmed tahari",
+    "action": "User Logout",
+    "timestamp": "2026-11-08T14:15:07.803Z"
+  },
+  {
+    "id": "audit_1794147309718_ablb",
+    "user": "SidAhmed Tahari",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم SidAhmed Tahari دور: commercial",
+    "timestamp": "2026-11-08T14:15:09.718Z"
+  },
+  {
+    "id": "audit_1794147317219_uxwq",
+    "details": "تسجيل خروج للمستخدم SidAhmed Tahari",
+    "user": "SidAhmed Tahari",
+    "timestamp": "2026-11-08T14:15:17.219Z",
+    "action": "User Logout"
+  },
+  {
+    "id": "audit_1794147371519_2fvs",
+    "timestamp": "2026-11-08T14:16:11.519Z",
+    "details": "تسجيل دخول ناجح للمستخدم SidAhmed Tahari دور: commercial",
+    "action": "User Login",
+    "user": "SidAhmed Tahari"
+  },
+  {
+    "id": "audit_1794147464765_ps89",
+    "timestamp": "2026-11-08T14:17:44.764Z",
+    "action": "Manual Merchant Added",
+    "user": "SidAhmed Tahari",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed Tahari: deco pro metal (+213549770524) - ولاية الجزائر العاصمة",
+    "prospect_id": "pros_manual_1794147464763_19c61"
+  },
+  {
+    "id": "audit_1794147567491_y1dh",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:19:27.491Z"
+  },
+  {
+    "id": "audit_1794147590261_mgwm",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed Tahari: OSSA.CHiC (+213557580096) - ولاية باتنة",
+    "prospect_id": "pros_manual_1794147590260_km7ht",
+    "action": "Manual Merchant Added",
+    "user": "SidAhmed Tahari",
+    "timestamp": "2026-11-08T14:19:50.261Z"
+  },
+  {
+    "id": "audit_1794147610560_93t6",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T14:20:10.560Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794147678283_ty1w",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:21:18.283Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794147687863_0klw",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T14:21:27.863Z"
+  },
+  {
+    "id": "audit_1794147700148_edru",
+    "prospect_id": "pros_manual_1794147700147_9q4mt",
+    "action": "Manual Merchant Added",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed Tahari: aymen_ dz (+213660043542) - ولاية الجزائر العاصمة",
+    "user": "SidAhmed Tahari",
+    "timestamp": "2026-11-08T14:21:40.148Z"
+  },
+  {
+    "id": "audit_1794147752189_pgo2",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T14:22:32.189Z",
+    "action": "User Login",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794147764154_wzqf",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T14:22:44.154Z"
+  },
+  {
+    "id": "audit_1794147770311_tfzr",
+    "user": "SidAhmed TAhari",
+    "timestamp": "2026-11-08T14:22:50.311Z",
+    "details": "تسجيل دخول ناجح للمستخدم SidAhmed TAhari دور: commercial",
+    "action": "User Login"
+  },
+  {
+    "id": "audit_1794148142849_l07w",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T14:29:02.849Z",
+    "action": "User Logout",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148144708_rqjg",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:29:04.708Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148207034_h1h7",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-08T14:30:07.034Z",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148243967_30sa",
+    "timestamp": "2026-11-08T14:30:43.967Z",
+    "details": "تسجيل خروج للمستخدم SidAhmed TAhari",
+    "action": "User Logout",
+    "user": "SidAhmed TAhari"
+  },
+  {
+    "id": "audit_1794148251759_jk4r",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T14:30:51.759Z",
+    "action": "User Login",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148349940_hohd",
+    "timestamp": "2026-11-08T14:32:29.940Z",
+    "action": "Bulk Commercial Assignment",
+    "user": "Cherouik Imad",
+    "details": "تم إسناد 1332 شاحن للممثل التجاري: Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148429508_p3hj",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-08T14:33:49.508Z",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin"
+  },
+  {
+    "id": "audit_1794148640380_ojib",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:37:20.380Z"
+  },
+  {
+    "id": "audit_1794148669385_k4zu",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T14:37:49.385Z"
+  },
+  {
+    "id": "audit_1794148749318_sbn1",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "action": "User Login",
+    "timestamp": "2026-11-08T14:39:09.318Z"
+  },
+  {
+    "id": "audit_1794148802193_ucco",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad",
+    "timestamp": "2026-11-08T14:40:02.193Z",
+    "action": "User Logout",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794148806833_avde",
+    "action": "User Login",
+    "user": "SidAhmed TAhari",
+    "details": "تسجيل دخول ناجح للمستخدم SidAhmed TAhari دور: commercial",
+    "timestamp": "2026-11-08T14:40:06.833Z"
+  },
+  {
+    "id": "audit_1794148826286_viu9",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794148826285_ophtz",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed TAhari: uzauzauuza (+213777777877) - ولاية الأغواط",
+    "user": "SidAhmed TAhari",
+    "timestamp": "2026-11-08T14:40:26.286Z"
+  },
+  {
+    "id": "audit_1794148843601_30ao",
+    "user": "SidAhmed TAhari",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed TAhari: SIZAJODIJZAOI (+213678787788) - ولاية تمنراست",
+    "timestamp": "2026-11-08T14:40:43.601Z",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794148843601_x4lyc"
+  },
+  {
+    "id": "audit_1794148859456_16ci",
+    "action": "Manual Merchant Added",
+    "prospect_id": "pros_manual_1794148859456_57wry",
+    "user": "SidAhmed TAhari",
+    "details": "إضافة تاجر يدوياً بواسطة SidAhmed TAhari: OIZJADOIJZAI (+213788842323) - ولاية الجزائر",
+    "timestamp": "2026-11-08T14:40:59.456Z"
+  },
+  {
+    "id": "audit_1794148877026_g4w8",
+    "old_value": "جديد",
+    "action": "Commercial call logged: طلب معلومات",
+    "prospect_id": "pros_manual_1794148859456_57wry",
+    "user": "SidAhmed TAhari",
+    "new_value": "طلب معلومات",
+    "timestamp": "2026-11-08T14:41:17.026Z",
+    "details": "تعديل بيانات التاجر: OIZJADOIJZAI"
+  },
+  {
+    "id": "audit_1794148879164_z9d8",
+    "action": "User Logout",
+    "user": "SidAhmed TAhari",
+    "timestamp": "2026-11-08T14:41:19.164Z",
+    "details": "تسجيل خروج للمستخدم SidAhmed TAhari"
+  },
+  {
+    "id": "audit_1794148883874_qv13",
+    "action": "User Login",
+    "user": "Cherouik Imad",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "timestamp": "2026-11-08T14:41:23.874Z"
+  },
+  {
+    "id": "audit_1794150318767_0rio",
+    "details": "تحديث بيانات المستخدم SidAhmed Tahari (sidahmed)",
+    "timestamp": "2026-11-08T15:05:18.766Z",
+    "action": "User Updated",
+    "user": "Cherouik Imad"
+  },
+  {
+    "id": "audit_1794156046186_fss6",
+    "user": "Cherouik Imad",
+    "action": "User Logout",
+    "timestamp": "2026-11-08T16:40:46.186Z",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794156084839_k1fb",
+    "timestamp": "2026-11-08T16:41:24.839Z",
+    "action": "User Logout",
+    "user": "Cherouik Imad",
+    "details": "تسجيل خروج للمستخدم Cherouik Imad"
+  },
+  {
+    "id": "audit_1794214320607_y92i",
+    "details": "تسجيل دخول ناجح للمستخدم Cherouik Imad دور: super_admin",
+    "user": "Cherouik Imad",
+    "timestamp": "2026-11-09T08:52:00.606Z",
+    "action": "User Login"
+  }
+]

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "call_1793545675495_1o0k",
+    "time": "16:07",
+    "status_before": "جديد",
+    "commercial_id": "usr_1793545340565_eyec",
+    "notes": "hhhhhh",
+    "is_confirmed_contact": false,
+    "call_result": "لم يرد",
+    "date": "2026-11-01T15:07:15.959Z",
+    "commercial_name": "mourad kermoula",
+    "expediteur_status_before": "Prospect",
+    "status_after": "لم يرد",
+    "competitor_name": "Yalidine Express",
+    "prospect_id": "pros_1793545461163_4t8g7",
+    "expediteur_status_after": "Prospect",
+    "created_at": "2026-11-01T15:07:15.959Z"
+  }
+]
