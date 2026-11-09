@@ -233,7 +233,7 @@ export const AddMerchantManualModal: React.FC<AddMerchantManualModalProps> = ({
       if (shouldClose) {
         onClose();
       } else {
-        setSuccessMsg(`تم حفظ وتوثيق التاجر "${trimmedName}" بنجاح! تم تفريغ الحقول ويمكنك الآن تسجيل تاجر آخر.`);
+        setSuccessMsg(`تم حفظ وتوثيق التاجر "${trimmedName}" بنجاح في Firestore! تم تفريغ الحقول ويمكنك الآن تسجيل تاجر آخر.`);
         setTimeout(() => setSuccessMsg(null), 5000);
       }
     } catch (err: any) {
@@ -594,7 +594,7 @@ export const AddMerchantManualModal: React.FC<AddMerchantManualModalProps> = ({
                 className="flex-1 sm:flex-initial px-5 py-2 bg-[#FF0000] hover:bg-[#E00000] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-red-950/40 cursor-pointer disabled:opacity-50 transition-colors"
               >
                 <CheckCircle2 size={14} />
-                <span>{isSubmitting ? 'جاري الحفظ والتوثيق...' : 'حفظ وإغلاق'}</span>
+                <span>{isSubmitting ? 'جاري الحفظ في Firestore...' : 'حفظ وإغلاق'}</span>
               </button>
             </div>
           </div>

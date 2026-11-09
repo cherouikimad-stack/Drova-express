@@ -84,25 +84,38 @@ export const ProspectDetailModal: React.FC<ProspectDetailModalProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleSave = () => {
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
     setSaving(true);
-    storage.updateProspect(
-      prospect.id,
-      {
-        status,
-        responsible,
-        assigned_commercial: responsible,
-        contact_date: contactDate,
-        next_followup: nextFollowup,
-        notes,
-        alert,
-        wilaya,
-        commune,
-      },
-      'Updated merchant dossier and sales CRM fields'
-    );
-    setSaving(false);
-    onUpdate();
+    setSaveStatus('saving');
+    setSaveError(null);
+    try {
+      await storage.updateProspect(
+        prospect.id,
+        {
+          status,
+          responsible,
+          assigned_commercial: responsible,
+          contact_date: contactDate,
+          next_followup: nextFollowup,
+          notes,
+          alert,
+          wilaya,
+          commune,
+        },
+        'Updated merchant dossier and sales CRM fields'
+      );
+      setSaveStatus('saved');
+      onUpdate();
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err: any) {
+      setSaveStatus('error');
+      setSaveError(err?.message || 'فشل الحفظ في Firestore');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAssignCommercial = (newCommercial: string) => {
@@ -658,19 +671,29 @@ export const ProspectDetailModal: React.FC<ProspectDetailModalProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
+              {saveStatus === 'saved' && (
+                <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1">
+                  ✓ تم الحفظ في Firestore
+                </span>
+              )}
+              {saveStatus === 'error' && saveError && (
+                <span className="text-rose-400 font-medium text-xs max-w-xs truncate" title={saveError}>
+                  ⚠ {saveError}
+                </span>
+              )}
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-xs text-[#8E8E93] hover:text-white transition-colors"
+                className="px-4 py-1.5 text-xs text-[#8E8E93] hover:text-white transition-colors cursor-pointer"
               >
                 إغلاق
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FF0000] hover:bg-[#E00000] text-white text-xs font-semibold shadow-sm transition-colors"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FF0000] hover:bg-[#E00000] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer disabled:opacity-60"
               >
                 <Save size={14} />
-                <span>{saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}</span>
+                <span>{saving ? 'جاري الحفظ في Firestore...' : 'حفظ التعديلات'}</span>
               </button>
             </div>
           </div>

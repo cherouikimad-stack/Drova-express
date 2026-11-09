@@ -170,23 +170,27 @@ export const ProspectsTable: React.FC<ProspectsTableProps> = ({
     }
   };
 
-  const handleBulkStatusChange = (newStatus: ProspectStatus) => {
+  const handleBulkStatusChange = async (newStatus: ProspectStatus) => {
     if (selectedIds.size === 0) return;
-    selectedIds.forEach(id => {
-      storage.updateProspectStatus(id, newStatus);
-    });
-    setSelectedIds(new Set());
-    onRefresh();
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    if (confirm(`هل أنت متأكد من حذف ${selectedIds.size} تاجر محدد؟`)) {
-      selectedIds.forEach(id => {
-        storage.deleteProspect(id);
-      });
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => storage.updateProspectStatus(id, newStatus)));
       setSelectedIds(new Set());
       onRefresh();
+    } catch (err: any) {
+      alert(err?.message || 'فشل تحديث حالة التجار المحددين في Firestore');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (confirm(`هل أنت متأكد من حذف ${selectedIds.size} تاجر محدد من Firestore؟`)) {
+      try {
+        await Promise.all(Array.from(selectedIds).map(id => storage.deleteProspect(id)));
+        setSelectedIds(new Set());
+        onRefresh();
+      } catch (err: any) {
+        alert(err?.message || 'فشل حذف التجار المحددين من Firestore');
+      }
     }
   };
 

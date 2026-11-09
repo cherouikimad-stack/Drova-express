@@ -10,6 +10,7 @@ import {
   Clock,
   Calendar,
   AlertTriangle,
+  AlertCircle,
   CheckCircle2,
   X,
   FileText,
@@ -129,58 +130,66 @@ export const CallModal: React.FC<CallModalProps> = ({
   // Check duplicate conflict
   const isConflict = prospect.assigned_commercial && prospect.assigned_commercial !== session.name && session.role !== 'super_admin';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
 
     if (isFollowUpRequired && !followUpDate) {
-      alert('يرجى تحديد تاريخ المتابعة القادمة.');
+      setErrorMsg('يرجى تحديد تاريخ المتابعة القادمة.');
       return;
     }
 
     setIsSubmitting(true);
 
-    const config = CALL_RESULTS.find(c => c.result === selectedResult);
-    const statusAfter = config?.defaultStatus || prospect.status;
-    const expStatusAfter = config?.defaultExpStatus || prospect.expediteur_status || 'Prospect';
+    try {
+      const config = CALL_RESULTS.find(c => c.result === selectedResult);
+      const statusAfter = config?.defaultStatus || prospect.status;
+      const expStatusAfter = config?.defaultExpStatus || prospect.expediteur_status || 'Prospect';
 
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-    storage.recordCall(
-      {
-        prospect_id: prospect.id,
-        commercial_name: session.name,
-        commercial_id: session.user_id,
-        date: callDate,
-        time: timeStr,
-        call_result: selectedResult,
-        is_confirmed_contact: isConfirmedContact,
-        non_conversion_reason: (selectedResult === 'غير مهتم' || selectedResult === 'رفض') ? nonConversionReason : undefined,
-        competitor_name: competitorName,
-        notes: callNotes.trim(),
-        next_followup_date: isFollowUpRequired ? followUpDate : undefined,
-        next_followup_time: isFollowUpRequired ? followUpTime : undefined,
-        status_before: prospect.status,
-        status_after: statusAfter,
-        expediteur_status_before: prospect.expediteur_status || 'Prospect',
-        expediteur_status_after: expStatusAfter,
-      },
-      isFollowUpRequired
-        ? {
-            date: followUpDate,
-            time: followUpTime,
-            reason: followUpReason || `متابعة بعد مكالمة: ${selectedResult}`,
-          }
-        : undefined
-    );
+      await storage.recordCall(
+        {
+          prospect_id: prospect.id,
+          commercial_name: session.name,
+          commercial_id: session.user_id,
+          date: callDate,
+          time: timeStr,
+          call_result: selectedResult,
+          is_confirmed_contact: isConfirmedContact,
+          non_conversion_reason: (selectedResult === 'غير مهتم' || selectedResult === 'رفض') ? nonConversionReason : undefined,
+          competitor_name: competitorName,
+          notes: callNotes.trim(),
+          next_followup_date: isFollowUpRequired ? followUpDate : undefined,
+          next_followup_time: isFollowUpRequired ? followUpTime : undefined,
+          status_before: prospect.status,
+          status_after: statusAfter,
+          expediteur_status_before: prospect.expediteur_status || 'Prospect',
+          expediteur_status_after: expStatusAfter,
+        },
+        isFollowUpRequired
+          ? {
+              date: followUpDate,
+              time: followUpTime,
+              reason: followUpReason || `متابعة بعد مكالمة: ${selectedResult}`,
+            }
+          : undefined
+      );
 
-    setIsSubmitting(false);
-    onCallLogged();
+      onCallLogged();
 
-    if (selectedResult === 'أكد التعامل مع DROVA' && onOpenChecklist) {
-      onOpenChecklist();
-    } else {
-      onClose();
+      if (selectedResult === 'أكد التعامل مع DROVA' && onOpenChecklist) {
+        onOpenChecklist();
+      } else {
+        onClose();
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'حدث خطأ أثناء حفظ المكالمة في Firestore');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -238,6 +247,13 @@ export const CallModal: React.FC<CallModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 flex-1">
+          {errorMsg && (
+            <div className="p-3 bg-red-950/70 border border-red-800 text-red-200 text-xs flex items-center gap-2">
+              <AlertCircle size={15} className="shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           {/* Merchant Snapshot Card */}
           <div className="bg-[#181818] border border-[#2A2A2A] p-3.5 space-y-2">
             <div className="flex items-start justify-between">

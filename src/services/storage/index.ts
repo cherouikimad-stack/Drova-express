@@ -64,7 +64,7 @@ import { hashPassword, verifyPassword, generateSalt } from '../auth/crypto';
 import { firestoreService } from '../firebase/firestoreService';
 import { authService } from '../firebase/authService';
 import { checkDuplicate, normalizeBusinessName } from '../deduplication';
-import { db } from '../firebase/config';
+import { db, auth } from '../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 
 const STORAGE_KEYS = {
@@ -269,7 +269,21 @@ class StorageManager {
 
   constructor() {
     this.loadFromStorage();
-    this.initFirestoreSync();
+    // Hook into Firebase Auth state: attach real-time listeners and load from Firestore when authenticated
+    authService.onAuthStateChange(user => {
+      if (user) {
+        this.authenticated = true;
+        this.initFirestoreSync();
+        this.refreshFromFirestore().catch(() => {});
+      } else {
+        this.teardownFirestoreSync();
+      }
+    });
+
+    if (auth.currentUser) {
+      this.initFirestoreSync();
+      this.refreshFromFirestore().catch(() => {});
+    }
   }
 
   private loadFromStorage() {
@@ -456,105 +470,77 @@ class StorageManager {
     this.listeners.forEach(fn => fn());
   }
 
-  // --- Real-time Firestore Multi-PC Synchronization ---
+  // --- Real-time Firestore Multi-Device Synchronization ---
   public initFirestoreSync() {
     if (this.isSyncingWithFirestore) return;
     this.isSyncingWithFirestore = true;
 
     try {
-      // 1. Subscribe to Prospects in real time
+      // 1. Subscribe to Prospects in real time from canonical collection
       const unsubProspects = firestoreService.subscribeProspects(
         firestoreProspects => {
-          if (firestoreProspects && firestoreProspects.length > 0) {
-            const mergedMap = new Map<string, Prospect>();
-            // Keep local manual prospects so newly entered merchants are never lost
-            for (const p of this.prospects) {
-              if (p.data_origin === 'real_manual' || (p.source && String(p.source).toLowerCase().includes('manual'))) {
-                mergedMap.set(p.id, p);
-              }
-            }
-            // Add/overwrite with firestore items
-            for (const p of firestoreProspects) {
-              mergedMap.set(p.id, p);
-            }
-            this.prospects = Array.from(mergedMap.values());
+          if (Array.isArray(firestoreProspects) && firestoreProspects.length > 0) {
+            this.prospects = firestoreProspects;
             try {
               localStorage.setItem(STORAGE_KEYS.PROSPECTS, JSON.stringify(this.prospects));
             } catch {}
             this.notify();
-          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.prospects.length > 0) {
-            this.syncProspectsToFirestore().catch(() => {});
           }
         },
-        err => console.warn('Firestore prospects sync warning:', err)
+        err => console.warn('[Firestore] prospects sync warning:', err)
       );
       this.unsubscribers.push(unsubProspects);
 
       // 2. Subscribe to Calls in real time
       const unsubCalls = firestoreService.subscribeCalls(
         firestoreCalls => {
-          if (firestoreCalls && firestoreCalls.length > 0) {
+          if (Array.isArray(firestoreCalls)) {
             this.crmCalls = firestoreCalls;
             try {
               localStorage.setItem(STORAGE_KEYS.CRM_CALLS, JSON.stringify(this.crmCalls));
             } catch {}
             this.notify();
-          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.crmCalls.length > 0) {
-            this.syncCallsToFirestore().catch(() => {});
           }
         },
-        err => console.warn('Firestore calls sync warning:', err)
+        err => console.warn('[Firestore] calls sync warning:', err)
       );
       this.unsubscribers.push(unsubCalls);
 
       // 3. Subscribe to Follow-ups in real time
       const unsubFollowUps = firestoreService.subscribeFollowUps(
         firestoreFollowUps => {
-          if (firestoreFollowUps && firestoreFollowUps.length > 0) {
+          if (Array.isArray(firestoreFollowUps)) {
             this.crmFollowUps = firestoreFollowUps;
             try {
               localStorage.setItem(STORAGE_KEYS.CRM_FOLLOW_UPS, JSON.stringify(this.crmFollowUps));
             } catch {}
             this.notify();
-          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.crmFollowUps.length > 0) {
-            this.syncFollowUpsToFirestore().catch(() => {});
           }
         },
-        err => console.warn('Firestore follow-ups sync warning:', err)
+        err => console.warn('[Firestore] follow-ups sync warning:', err)
       );
       this.unsubscribers.push(unsubFollowUps);
 
       // 4. Subscribe to Expéditeurs in real time
       const unsubExpediteurs = firestoreService.subscribeExpediteurs(
         firestoreExpediteurs => {
-          if (firestoreExpediteurs && firestoreExpediteurs.length > 0) {
+          if (Array.isArray(firestoreExpediteurs)) {
             this.expediteurs = firestoreExpediteurs;
             try {
               localStorage.setItem(STORAGE_KEYS.EXPEDITEURS, JSON.stringify(this.expediteurs));
             } catch {}
             this.notify();
-          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.expediteurs.length > 0) {
-            this.syncExpediteursToFirestore().catch(() => {});
           }
         },
-        err => console.warn('Firestore expediteurs sync warning:', err)
+        err => console.warn('[Firestore] expediteurs sync warning:', err)
       );
       this.unsubscribers.push(unsubExpediteurs);
 
       // 5. Subscribe to Users in real time
       const unsubUsers = firestoreService.subscribeUsers(
         firestoreUsers => {
-          if (firestoreUsers && firestoreUsers.length > 0) {
-            const userMap = new Map<string, UserAccount>();
-            // Keep local accounts so newly created team accounts in this browser aren't lost
-            for (const u of this.userAccounts) {
-              userMap.set(u.username.toLowerCase(), u);
-            }
-            // Add/overwrite from Firestore
-            for (const u of firestoreUsers) {
-              userMap.set(u.username.toLowerCase(), u);
-            }
-            this.userAccounts = Array.from(userMap.values());
+          if (Array.isArray(firestoreUsers) && firestoreUsers.length > 0) {
+            this.userAccounts = firestoreUsers;
             this.commercialAccounts = this.userAccounts
               .filter(u => u.role === 'commercial' || u.role === 'commercial_manager' || u.role === 'super_admin')
               .map(u => ({
@@ -571,16 +557,15 @@ class StorageManager {
               localStorage.setItem(STORAGE_KEYS.COMMERCIAL_ACCOUNTS, JSON.stringify(this.commercialAccounts));
             } catch {}
             this.notify();
-          } else if (this.authenticated && this.userSession.role === 'super_admin' && this.userAccounts.length > 0) {
-            this.syncUsersToFirestore().catch(() => {});
           }
-        }
+        },
+        err => console.warn('[Firestore] users sync warning:', err)
       );
       this.unsubscribers.push(unsubUsers);
 
       // 6. Subscribe to Commercial Feedbacks in real time
       const unsubFeedbacks = firestoreService.subscribeFeedbacks(feedbacks => {
-        if (feedbacks && feedbacks.length > 0) {
+        if (Array.isArray(feedbacks)) {
           this.commercialFeedbacks = feedbacks;
           try {
             localStorage.setItem(STORAGE_KEYS.COMMERCIAL_FEEDBACKS, JSON.stringify(this.commercialFeedbacks));
@@ -592,7 +577,7 @@ class StorageManager {
 
       // 7. Subscribe to Notifications in real time
       const unsubNotifs = firestoreService.subscribeNotifications(notifs => {
-        if (notifs && notifs.length > 0) {
+        if (Array.isArray(notifs)) {
           this.notifications = notifs;
           try {
             localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(this.notifications));
@@ -603,6 +588,29 @@ class StorageManager {
       this.unsubscribers.push(unsubNotifs);
     } catch (e) {
       console.warn('Could not initialize Firestore real-time listeners:', e);
+    }
+  }
+
+  public teardownFirestoreSync() {
+    this.unsubscribers.forEach(unsub => {
+      try { unsub(); } catch {}
+    });
+    this.unsubscribers = [];
+    this.isSyncingWithFirestore = false;
+  }
+
+  public async refreshFromFirestore(): Promise<void> {
+    try {
+      const list = await firestoreService.getProspectsOnce();
+      if (Array.isArray(list) && list.length > 0) {
+        this.prospects = list;
+        try {
+          localStorage.setItem(STORAGE_KEYS.PROSPECTS, JSON.stringify(this.prospects));
+        } catch {}
+        this.notify();
+      }
+    } catch (err) {
+      console.warn('[StorageManager] refreshFromFirestore notice:', err);
     }
   }
 
@@ -687,9 +695,12 @@ class StorageManager {
     return this.evidence.filter(e => e.prospect_id === prospectId);
   }
 
-  public updateProspect(id: string, updates: Partial<Prospect>, actionName = 'Prospect updated') {
+  public async updateProspect(id: string, updates: Partial<Prospect>, actionName = 'Prospect updated'): Promise<boolean> {
     const index = this.prospects.findIndex(p => p.id === id);
     if (index === -1) return false;
+
+    // Await Cloud Firestore update first
+    await firestoreService.updateProspect(id, updates);
 
     const old = this.prospects[index];
     const updated = {
@@ -704,16 +715,16 @@ class StorageManager {
       prospect_id: id,
       old_value: old.status !== updated.status ? old.status : undefined,
       new_value: old.status !== updated.status ? updated.status : undefined,
-      details: `تعديل بيانات التاجر: ${updated.name}`,
+      details: `تعديل بيانات التاجر في Firestore: ${updated.name}`,
     });
 
     this.saveToStorage();
-    firestoreService.updateProspect(id, updates).catch(() => {});
+    this.notify();
     return true;
   }
 
-  public updateProspectStatus(id: string, status: ProspectStatus, notes?: string) {
-    return this.updateProspect(id, { status, ...(notes ? { notes } : {}) }, `Status changed to ${status}`);
+  public async updateProspectStatus(id: string, status: ProspectStatus, notes?: string): Promise<boolean> {
+    return await this.updateProspect(id, { status, ...(notes ? { notes } : {}) }, `Status changed to ${status}`);
   }
 
   public addProspects(newProspects: Prospect[], newEvidence: SourceEvidence[], campaignId?: string) {
@@ -750,7 +761,7 @@ class StorageManager {
       ...prospect,
       id: prospect.id || `pros_man_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       data_origin: 'real_manual',
-      source: 'manual_commercial_entry',
+      source: prospect.source || 'manual_commercial_entry',
       created_at: prospect.created_at || now,
       updated_at: now,
       added_by: repName,
@@ -776,27 +787,19 @@ class StorageManager {
       }
     }
 
-    // Ensure it replaces or prepends without duplicate
+    // 1. Await Firestore commit first (stops execution if database rejects or is offline)
+    await firestoreService.saveProspect(newProspect);
+
+    // 2. Only after confirmed Firestore commit, update local state
     this.prospects = [newProspect, ...this.prospects.filter(p => p.id !== newProspect.id)];
     this.addAuditLog({
       action: 'Manual Merchant Added',
       prospect_id: newProspect.id,
-      details: `إضافة تاجر يدوياً بواسطة ${newProspect.added_by}: ${newProspect.name} (${newProspect.phone}) - ولاية ${newProspect.wilaya}`,
+      details: `إضافة تاجر يدوياً وتوثيقه في Firestore بواسطة ${newProspect.added_by}: ${newProspect.name} (${newProspect.phone}) - ولاية ${newProspect.wilaya}`,
     });
 
     this.saveToStorage();
     this.notify();
-    try {
-      await firestoreService.saveProspect(newProspect);
-    } catch (err: any) {
-      console.warn('Firestore manual prospect save notice:', err);
-      if (err.message && err.message.includes('مسجل مسبقاً')) {
-        this.prospects = this.prospects.filter(p => p.id !== newProspect.id);
-        this.saveToStorage();
-        this.notify();
-        throw err;
-      }
-    }
   }
 
   public async addSingleProspect(data: {
@@ -844,21 +847,28 @@ class StorageManager {
       shipping_potential: 'HIGH',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      data_origin: 'real_manual',
     };
+
+    // Await Firestore commit first
+    await firestoreService.saveProspect(newProspect);
 
     this.prospects.unshift(newProspect);
     this.addAuditLog({
       action: 'Prospect created manually',
       prospect_id: id,
-      details: `إضافة التاجر الجديد: ${newProspect.name} (${newProspect.wilaya}) بواسطة ${this.userSession.name}`,
+      details: `إضافة التاجر الجديد وحفظه في Firestore: ${newProspect.name} (${newProspect.wilaya}) بواسطة ${this.userSession.name}`,
     });
 
     this.saveToStorage();
-    await firestoreService.saveProspect(newProspect).catch(() => {});
+    this.notify();
     return newProspect;
   }
 
-  public deleteProspect(id: string) {
+  public async deleteProspect(id: string): Promise<void> {
+    // Await Firestore deletion first
+    await firestoreService.deleteProspect(id);
+
     const pros = this.getProspectById(id);
     this.prospects = this.prospects.filter(p => p.id !== id);
     this.evidence = this.evidence.filter(e => e.prospect_id !== id);
@@ -866,11 +876,11 @@ class StorageManager {
     this.addAuditLog({
       action: 'Prospect deleted',
       prospect_id: id,
-      details: pros ? `حذف التاجر: ${pros.name}` : `حذف التاجر بمعرف ${id}`,
+      details: pros ? `حذف التاجر من Firestore: ${pros.name}` : `حذف التاجر بمعرف ${id}`,
     });
 
     this.saveToStorage();
-    firestoreService.deleteProspect(id).catch(() => {});
+    this.notify();
   }
 
   /**
@@ -1487,20 +1497,21 @@ class StorageManager {
     return this.crmCalls.filter(c => c.prospect_id === prospectId);
   }
 
-  public recordCall(
+  public async recordCall(
     callData: Omit<CRMCall, 'id'>,
     followUpData?: { date: string; time?: string; reason: string }
-  ): CRMCall {
+  ): Promise<CRMCall> {
     const callId = `call_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newCall: CRMCall = {
       ...callData,
       id: callId,
     };
 
+    // 1. Await Firestore call record
+    await firestoreService.recordCall(newCall);
     this.crmCalls = [newCall, ...this.crmCalls];
-    firestoreService.recordCall(newCall).catch(() => {});
 
-    // Update prospect with new status, last call details, and priority
+    // 2. Update prospect with new status, last call details, and priority
     const prospect = this.getProspectById(callData.prospect_id);
     if (prospect) {
       const callCount = (prospect.call_count || 0) + 1;
@@ -1517,10 +1528,10 @@ class StorageManager {
         updates.next_followup = callData.next_followup_date;
       }
 
-      this.updateProspect(prospect.id, updates, `Commercial call logged: ${callData.call_result}`);
+      await this.updateProspect(prospect.id, updates, `Commercial call logged: ${callData.call_result}`).catch(() => {});
     }
 
-    // Automatically create a follow-up if requested or if status requires it (Section 16)
+    // 3. Automatically create a follow-up if requested or if status requires it (Section 16)
     if (
       followUpData ||
       callData.call_result === 'طلب الاتصال لاحقًا' ||
@@ -1549,11 +1560,11 @@ class StorageManager {
         created_at: new Date().toISOString(),
       };
 
+      await firestoreService.saveFollowUp(newFollowUp).catch(() => {});
       this.crmFollowUps = [newFollowUp, ...this.crmFollowUps];
-      firestoreService.saveFollowUp(newFollowUp).catch(() => {});
     }
 
-    // If prospect reached "أكد التعامل مع DROVA", ensure an Expediteur record is prepared
+    // 4. If prospect reached "أكد التعامل مع DROVA", ensure an Expediteur record is prepared in Firestore
     if (callData.call_result === 'أكد التعامل مع DROVA' || callData.status_after === 'أكد التعامل مع DROVA') {
       const existingExp = this.getExpediteurByProspectId(callData.prospect_id);
       if (!existingExp && prospect) {
@@ -1581,12 +1592,13 @@ class StorageManager {
           status: 'مؤكد',
           checklist: createEmptyChecklist(prospect),
         };
+        await firestoreService.saveExpediteur(newExp).catch(() => {});
         this.expediteurs.push(newExp);
-        firestoreService.saveExpediteur(newExp).catch(() => {});
       }
     }
 
     this.saveToStorage();
+    this.notify();
     return newCall;
   }
 
@@ -1628,11 +1640,11 @@ class StorageManager {
     return this.expediteurs.find(e => e.prospect_id === prospectId);
   }
 
-  public updateExpediteurChecklist(
+  public async updateExpediteurChecklist(
     prospectId: string,
     checklistUpdates: Partial<ActivationChecklist>,
     approvedBy?: string
-  ): ExpediteurProfile | null {
+  ): Promise<ExpediteurProfile | null> {
     let exp = this.getExpediteurByProspectId(prospectId);
     const prospect = this.getProspectById(prospectId);
 
@@ -1683,26 +1695,32 @@ class StorageManager {
       }
 
       if (prospect) {
-        this.updateProspect(prospectId, {
+        await this.updateProspect(prospectId, {
           status: 'Expéditeur مفعل',
           expediteur_status: 'مفعل',
-        }, 'Expéditeur officially activated by manager');
+        }, 'Expéditeur officially activated by manager').catch(() => {});
       }
     }
 
+    // Await Firestore save
+    await firestoreService.saveExpediteur(exp);
+
     this.saveToStorage();
+    this.notify();
     return exp;
   }
 
-  public updateExpediteur(
+  public async updateExpediteur(
     expediteurId: string,
     updates: Partial<ExpediteurProfile>,
     auditReason?: string
-  ): ExpediteurProfile | undefined {
+  ): Promise<ExpediteurProfile | undefined> {
     const exp = this.expediteurs.find(e => e.id === expediteurId);
     if (!exp) return undefined;
 
-    const oldStatus = exp.status;
+    // Await Firestore update
+    await firestoreService.updateExpediteur(expediteurId, updates);
+
     const oldCommercialStatus = exp.commercial_status;
     const oldLifecycleStatus = exp.lifecycle_status;
 
@@ -1726,11 +1744,11 @@ class StorageManager {
 
     this.addAuditLog({
       action: 'Expéditeur Updated',
-      details: `${auditReason || 'تحديث ملف الشاحن'}: ${exp.business_name} (${exp.id}) [Commercial: ${oldCommercialStatus} -> ${exp.commercial_status}, Lifecycle: ${oldLifecycleStatus} -> ${exp.lifecycle_status}]`,
+      details: `${auditReason || 'تحديث ملف الشاحن في Firestore'}: ${exp.business_name} (${exp.id}) [Commercial: ${oldCommercialStatus} -> ${exp.commercial_status}, Lifecycle: ${oldLifecycleStatus} -> ${exp.lifecycle_status}]`,
     });
 
     this.saveToStorage();
-    firestoreService.updateExpediteur(expediteurId, updates).catch(() => {});
+    this.notify();
     return exp;
   }
 
@@ -2458,9 +2476,7 @@ class StorageManager {
           details: `تسجيل دخول ناجح للمستخدم ${this.userSession.name} (${this.userSession.username}) دور: ${this.userSession.role}`,
         });
 
-        if (this.userSession.role === 'super_admin' && this.prospects.length > 0) {
-          this.syncInitialDataToFirestore().catch(() => {});
-        }
+        this.refreshFromFirestore().catch(() => {});
 
         this.saveToStorage();
         return { success: true, session: { ...this.userSession } };
@@ -2500,9 +2516,7 @@ class StorageManager {
           details: `تسجيل دخول ناجح عبر Google للمستخدم ${this.userSession.name} دور: ${this.userSession.role}`,
         });
 
-        if (this.userSession.role === 'super_admin' && this.prospects.length > 0) {
-          this.syncInitialDataToFirestore().catch(() => {});
-        }
+        this.refreshFromFirestore().catch(() => {});
 
         this.saveToStorage();
         return { success: true, session: { ...this.userSession } };

@@ -4,6 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "drova-express",
     "public": "dist",
     "ignore": [
       "firebase.json",

@@ -8,7 +8,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDfzBl7A2wGuCV7qdyYunRFKF4Sxud7bTo',
+  apiKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) || 'AIzaSyDfzBl7A2wGuCV7qdyYunRFKF4Sxud7bTo',
   authDomain: 'drova-express.firebaseapp.com',
   projectId: 'drova-express',
   storageBucket: 'drova-express.firebasestorage.app',

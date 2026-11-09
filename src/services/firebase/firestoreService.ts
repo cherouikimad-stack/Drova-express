@@ -1,6 +1,7 @@
 /**
- * Central Cloud Firestore Service for DROVA Express
- * Real-time synchronization across all commercial and management PCs
+ * Central Cloud Firestore Service for DROVA Express CRM
+ * Real-time synchronization across all commercial and management devices
+ * Primary Canonical Store: Cloud Firestore on Project 'drova-express' (default)
  */
 import {
   collection,
@@ -8,18 +9,16 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  updateDoc,
   deleteDoc,
   onSnapshot,
   query,
   where,
   orderBy,
   limit,
-  Timestamp,
-  serverTimestamp,
-  writeBatch
+  writeBatch,
+  Unsubscribe
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 import {
   Prospect,
   CRMCall,
@@ -30,7 +29,6 @@ import {
   AuditLog,
   UserAccount
 } from '../../types';
-import type { AdminSettings } from '../storage';
 import { normalizeAlgerianPhone } from '../phone';
 import { normalizeBusinessName } from '../deduplication';
 
@@ -48,35 +46,50 @@ function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<str
   return result;
 }
 
+function formatFirestoreErrorMessage(error: any, actionName: string): string {
+  const msg = error?.message || String(error);
+  if (msg.includes('permission-denied') || msg.includes('Missing or insufficient permissions')) {
+    return `خطأ في الصلاحيات أثناء ${actionName}: يرجى التأكد من تسجيل الدخول بحساب موظف مصرح له في DROVA Express.`;
+  }
+  if (msg.includes('unavailable') || msg.includes('offline') || msg.includes('network')) {
+    return `تعذر الاتصال بخوادم Firestore أثناء ${actionName}. يرجى التحقق من اتصال الإنترنت.`;
+  }
+  if (msg.includes('Quota exceeded')) {
+    return `تم تجاوز حد الحصص المجاني المتاح في Firebase Spark لهذا اليوم. سيتجدد غداً.`;
+  }
+  return `فشل ${actionName} في Firestore: ${msg}`;
+}
+
 export const firestoreService = {
-  // ================= MERCHANTS & PROSPECTS (CENTRAL SINGLE SOURCE OF TRUTH) =================
-  subscribeProspects(onUpdate: (prospects: Prospect[]) => void, onError?: (err: any) => void) {
-    // Primary subscription to 'merchants' collection with fallback to 'prospects'
-    const merchantsRef = collection(db, 'merchants');
+  // ================= MERCHANTS & PROSPECTS (CANONICAL SOURCE: 'prospects') =================
+  subscribeProspects(onUpdate: (prospects: Prospect[]) => void, onError?: (err: any) => void): Unsubscribe {
+    const colRef = collection(db, 'prospects');
     return onSnapshot(
-      merchantsRef,
+      colRef,
       snapshot => {
         const list: Prospect[] = [];
         snapshot.forEach(d => {
           list.push({ id: d.id, ...(d.data() as any) });
         });
-
-        if (list.length > 0) {
-          onUpdate(list);
-        } else {
-          // If merchants is empty, check prospects for initial migration
-          getDocs(collection(db, 'prospects')).then(pSnap => {
-            const pList: Prospect[] = [];
-            pSnap.forEach(d => pList.push({ id: d.id, ...(d.data() as any) }));
-            onUpdate(pList);
-          }).catch(() => onUpdate([]));
-        }
+        onUpdate(list);
       },
       error => {
-        console.warn('Merchants Firestore snapshot warning:', error);
+        console.warn('[Firestore] Prospects snapshot warning:', error);
         if (onError) onError(error);
       }
     );
+  },
+
+  async getProspectsOnce(): Promise<Prospect[]> {
+    try {
+      const snap = await getDocs(collection(db, 'prospects'));
+      const list: Prospect[] = [];
+      snap.forEach(d => list.push({ id: d.id, ...(d.data() as any) }));
+      return list;
+    } catch (error: any) {
+      console.error('[Firestore getProspectsOnce Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تحميل التجار من Firestore'));
+    }
   },
 
   async saveProspect(prospect: Prospect, checkDuplicate: boolean = true): Promise<void> {
@@ -86,7 +99,7 @@ export const firestoreService = {
       ? `phone_${phoneNorm.normalized.replace(/[^0-9]/g, '')}`
       : null;
 
-    // Atomic Duplicate Prevention against Firestore
+    // Duplicate Phone Check against Firestore
     if (checkDuplicate && phoneKey) {
       try {
         const phoneLockRef = doc(db, 'merchant_phones', phoneKey);
@@ -124,89 +137,123 @@ export const firestoreService = {
       updated_at: now
     });
 
-    // 1. Write to central 'merchants' collection (Master primary store)
-    await setDoc(doc(db, 'merchants', prospect.id), sanitized, { merge: true });
+    try {
+      // 1. Write to canonical 'prospects' collection
+      await setDoc(doc(db, 'prospects', prospect.id), sanitized, { merge: true });
 
-    // 2. Synchronize to 'prospects' collection (For backwards compatibility across all views)
-    await setDoc(doc(db, 'prospects', prospect.id), sanitized, { merge: true });
+      // 2. Synchronize to 'merchants' collection for full backwards compatibility
+      await setDoc(doc(db, 'merchants', prospect.id), sanitized, { merge: true });
 
-    // 3. Atomically register phone lock
-    if (phoneKey) {
-      const phoneLockRef = doc(db, 'merchant_phones', phoneKey);
-      await setDoc(phoneLockRef, {
-        merchantId: prospect.id,
-        name: prospect.name,
-        phone: phoneNorm.normalized,
-        updatedAt: now,
-      }, { merge: true }).catch(() => {});
+      // 3. Register unique phone lock
+      if (phoneKey) {
+        const phoneLockRef = doc(db, 'merchant_phones', phoneKey);
+        await setDoc(phoneLockRef, {
+          merchantId: prospect.id,
+          name: prospect.name,
+          phone: phoneNorm.normalized,
+          updatedAt: now,
+        }, { merge: true });
+      }
+    } catch (error: any) {
+      console.error('[Firestore saveProspect Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `حفظ التاجر "${prospect.name}"`));
     }
   },
 
   async updateProspect(id: string, updates: Partial<Prospect>): Promise<void> {
     const now = new Date().toISOString();
     const sanitized = sanitizeForFirestore({ ...updates, updatedAt: now, updated_at: now });
-    await updateDoc(doc(db, 'merchants', id), sanitized).catch(() => {});
-    await updateDoc(doc(db, 'prospects', id), sanitized).catch(() => {});
+    try {
+      await Promise.all([
+        setDoc(doc(db, 'prospects', id), sanitized, { merge: true }),
+        setDoc(doc(db, 'merchants', id), sanitized, { merge: true })
+      ]);
+    } catch (error: any) {
+      console.error('[Firestore updateProspect Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `تحديث التاجر (${id})`));
+    }
   },
 
   async deleteProspect(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'merchants', id)).catch(() => {});
-    await deleteDoc(doc(db, 'prospects', id)).catch(() => {});
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, 'prospects', id)),
+        deleteDoc(doc(db, 'merchants', id))
+      ]);
+    } catch (error: any) {
+      console.error('[Firestore deleteProspect Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `حذف التاجر (${id})`));
+    }
   },
 
   async saveProspectsBatch(prospects: Prospect[]): Promise<void> {
     if (!prospects || prospects.length === 0) return;
-    const chunkSize = 200; // Well below 500 writes limit
-    for (let i = 0; i < prospects.length; i += chunkSize) {
-      const chunk = prospects.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-      const now = new Date().toISOString();
-      for (const p of chunk) {
-        const sanitized = sanitizeForFirestore({
-          ...p,
-          business_name: p.business_name || p.name,
-          updatedAt: now,
-          updated_at: now
-        });
-        batch.set(doc(db, 'merchants', p.id), sanitized, { merge: true });
-        batch.set(doc(db, 'prospects', p.id), sanitized, { merge: true });
+    const chunkSize = 200;
+    try {
+      for (let i = 0; i < prospects.length; i += chunkSize) {
+        const chunk = prospects.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        const now = new Date().toISOString();
+        for (const p of chunk) {
+          const sanitized = sanitizeForFirestore({
+            ...p,
+            business_name: p.business_name || p.name,
+            updatedAt: now,
+            updated_at: now
+          });
+          batch.set(doc(db, 'prospects', p.id), sanitized, { merge: true });
+          batch.set(doc(db, 'merchants', p.id), sanitized, { merge: true });
+        }
+        await batch.commit();
       }
-      await batch.commit();
+    } catch (error: any) {
+      console.error('[Firestore saveProspectsBatch Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'حفظ دفعة التجار'));
     }
   },
 
   async updateProspectsBatch(updates: { id: string; data: Partial<Prospect> }[]): Promise<void> {
     if (!updates || updates.length === 0) return;
     const chunkSize = 200;
-    for (let i = 0; i < updates.length; i += chunkSize) {
-      const chunk = updates.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-      const now = new Date().toISOString();
-      for (const item of chunk) {
-        const sanitized = sanitizeForFirestore({ ...item.data, updatedAt: now });
-        batch.update(doc(db, 'merchants', item.id), sanitized);
-        batch.update(doc(db, 'prospects', item.id), sanitized);
+    try {
+      for (let i = 0; i < updates.length; i += chunkSize) {
+        const chunk = updates.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        const now = new Date().toISOString();
+        for (const item of chunk) {
+          const sanitized = sanitizeForFirestore({ ...item.data, updatedAt: now });
+          batch.set(doc(db, 'prospects', item.id), sanitized, { merge: true });
+          batch.set(doc(db, 'merchants', item.id), sanitized, { merge: true });
+        }
+        await batch.commit();
       }
-      await batch.commit();
+    } catch (error: any) {
+      console.error('[Firestore updateProspectsBatch Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تحديث دفعة التجار'));
     }
   },
 
   async deleteProspectsBatch(ids: string[]): Promise<void> {
     if (!ids || ids.length === 0) return;
     const chunkSize = 200;
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      const chunk = ids.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-      for (const id of chunk) {
-        batch.delete(doc(db, 'merchants', id));
-        batch.delete(doc(db, 'prospects', id));
+    try {
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        for (const id of chunk) {
+          batch.delete(doc(db, 'prospects', id));
+          batch.delete(doc(db, 'merchants', id));
+        }
+        await batch.commit();
       }
-      await batch.commit();
+    } catch (error: any) {
+      console.error('[Firestore deleteProspectsBatch Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'حذف دفعة التجار'));
     }
   },
 
-  // ================= CALLS & MERCHANT ACTIVITIES =================
-  subscribeCalls(onUpdate: (calls: CRMCall[]) => void, onError?: (err: any) => void) {
+  // ================= CALLS & ACTIVITIES =================
+  subscribeCalls(onUpdate: (calls: CRMCall[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'calls');
     return onSnapshot(
       colRef,
@@ -218,7 +265,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('Calls Firestore snapshot warning:', error);
+        console.warn('[Firestore] Calls snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -230,21 +277,24 @@ export const firestoreService = {
       ...call,
       created_at: call.date || new Date().toISOString()
     });
-    await setDoc(docRef, sanitized, { merge: true });
 
-    // Update merchant's last call status in merchants & prospects
-    if (call.prospect_id) {
-      const callUpdate = {
-        last_call_at: call.date,
-        last_call_result: call.call_result,
-        updated_at: new Date().toISOString(),
-      };
-      await updateDoc(doc(db, 'merchants', call.prospect_id), callUpdate).catch(() => {});
-      await updateDoc(doc(db, 'prospects', call.prospect_id), callUpdate).catch(() => {});
-    }
-
-    // Record activity in merchantActivities collection
     try {
+      await setDoc(docRef, sanitized, { merge: true });
+
+      // Update merchant's last call status in prospects & merchants
+      if (call.prospect_id) {
+        const callUpdate = {
+          last_call_at: call.date,
+          last_call_result: call.call_result,
+          updated_at: new Date().toISOString(),
+        };
+        await Promise.all([
+          setDoc(doc(db, 'prospects', call.prospect_id), callUpdate, { merge: true }),
+          setDoc(doc(db, 'merchants', call.prospect_id), callUpdate, { merge: true })
+        ]);
+      }
+
+      // Record activity in merchantActivities collection
       const actId = `act_${call.id}`;
       await setDoc(doc(db, 'merchantActivities', actId), {
         id: actId,
@@ -255,11 +305,14 @@ export const firestoreService = {
         notes: call.notes,
         timestamp: call.date || new Date().toISOString()
       }, { merge: true });
-    } catch {}
+    } catch (error: any) {
+      console.error('[Firestore recordCall Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تسجيل المكالمة التجارية'));
+    }
   },
 
   // ================= FOLLOW-UPS =================
-  subscribeFollowUps(onUpdate: (followUps: CRMFollowUp[]) => void, onError?: (err: any) => void) {
+  subscribeFollowUps(onUpdate: (followUps: CRMFollowUp[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'followups');
     return onSnapshot(
       colRef,
@@ -271,7 +324,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('FollowUps Firestore snapshot warning:', error);
+        console.warn('[Firestore] FollowUps snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -279,18 +332,32 @@ export const firestoreService = {
 
   async saveFollowUp(followUp: CRMFollowUp): Promise<void> {
     const sanitized = sanitizeForFirestore(followUp);
-    await setDoc(doc(db, 'followups', followUp.id), sanitized, { merge: true });
-    await setDoc(doc(db, 'followUps', followUp.id), sanitized, { merge: true }).catch(() => {});
+    try {
+      await Promise.all([
+        setDoc(doc(db, 'followups', followUp.id), sanitized, { merge: true }),
+        setDoc(doc(db, 'followUps', followUp.id), sanitized, { merge: true })
+      ]);
+    } catch (error: any) {
+      console.error('[Firestore saveFollowUp Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'حفظ المتابعة في Firestore'));
+    }
   },
 
   async updateFollowUp(id: string, updates: Partial<CRMFollowUp>): Promise<void> {
     const sanitized = sanitizeForFirestore(updates);
-    await updateDoc(doc(db, 'followups', id), sanitized).catch(() => {});
-    await updateDoc(doc(db, 'followUps', id), sanitized).catch(() => {});
+    try {
+      await Promise.all([
+        setDoc(doc(db, 'followups', id), sanitized, { merge: true }),
+        setDoc(doc(db, 'followUps', id), sanitized, { merge: true })
+      ]);
+    } catch (error: any) {
+      console.error('[Firestore updateFollowUp Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تحديث المتابعة في Firestore'));
+    }
   },
 
   // ================= EXPEDITEURS =================
-  subscribeExpediteurs(onUpdate: (expediteurs: ExpediteurProfile[]) => void, onError?: (err: any) => void) {
+  subscribeExpediteurs(onUpdate: (expediteurs: ExpediteurProfile[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'expediteurs');
     return onSnapshot(
       colRef,
@@ -302,7 +369,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('Expediteurs Firestore snapshot warning:', error);
+        console.warn('[Firestore] Expediteurs snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -310,16 +377,28 @@ export const firestoreService = {
 
   async saveExpediteur(expediteur: ExpediteurProfile): Promise<void> {
     const docRef = doc(db, 'expediteurs', expediteur.id);
-    await setDoc(docRef, expediteur, { merge: true });
+    const sanitized = sanitizeForFirestore(expediteur);
+    try {
+      await setDoc(docRef, sanitized, { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore saveExpediteur Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'حفظ الشاحن (Expéditeur) في Firestore'));
+    }
   },
 
   async updateExpediteur(id: string, updates: Partial<ExpediteurProfile>): Promise<void> {
     const docRef = doc(db, 'expediteurs', id);
-    await updateDoc(docRef, updates);
+    const sanitized = sanitizeForFirestore(updates);
+    try {
+      await setDoc(docRef, sanitized, { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore updateExpediteur Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تحديث الشاحن (Expéditeur) في Firestore'));
+    }
   },
 
   // ================= COMMERCIAL FEEDBACKS =================
-  subscribeFeedbacks(onUpdate: (feedbacks: CommercialFeedback[]) => void, onError?: (err: any) => void) {
+  subscribeFeedbacks(onUpdate: (feedbacks: CommercialFeedback[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'commercialFeedbacks');
     return onSnapshot(
       colRef,
@@ -331,7 +410,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('Feedbacks Firestore snapshot warning:', error);
+        console.warn('[Firestore] Feedbacks snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -339,11 +418,17 @@ export const firestoreService = {
 
   async saveFeedback(feedback: CommercialFeedback): Promise<void> {
     const docRef = doc(db, 'commercialFeedbacks', feedback.id);
-    await setDoc(docRef, feedback, { merge: true });
+    const sanitized = sanitizeForFirestore(feedback);
+    try {
+      await setDoc(docRef, sanitized, { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore saveFeedback Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'إرسال ملاحظة المبيعات'));
+    }
   },
 
   // ================= NOTIFICATIONS =================
-  subscribeNotifications(onUpdate: (notifications: NotificationItem[]) => void, onError?: (err: any) => void) {
+  subscribeNotifications(onUpdate: (notifications: NotificationItem[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'notifications');
     return onSnapshot(
       colRef,
@@ -355,7 +440,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('Notifications Firestore snapshot warning:', error);
+        console.warn('[Firestore] Notifications snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -363,19 +448,35 @@ export const firestoreService = {
 
   async saveNotification(notification: NotificationItem): Promise<void> {
     const docRef = doc(db, 'notifications', notification.id);
-    await setDoc(docRef, notification, { merge: true });
+    const sanitized = sanitizeForFirestore(notification);
+    try {
+      await setDoc(docRef, sanitized, { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore saveNotification Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'حفظ الإشعار'));
+    }
   },
 
   async updateNotification(id: string, updates: Partial<NotificationItem>): Promise<void> {
     const docRef = doc(db, 'notifications', id);
-    await updateDoc(docRef, updates);
+    const sanitized = sanitizeForFirestore(updates);
+    try {
+      await setDoc(docRef, sanitized, { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore updateNotification Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, 'تحديث الإشعار'));
+    }
   },
 
   // ================= AUDIT LOGS =================
   async recordAuditLog(entry: Omit<AuditLog, 'id'>): Promise<void> {
     const id = `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const docRef = doc(db, 'auditLogs', id);
-    await setDoc(docRef, { ...entry, id });
+    try {
+      await setDoc(docRef, { ...entry, id });
+    } catch (error) {
+      console.warn('[Firestore recordAuditLog notice]', error);
+    }
   },
 
   async getAuditLogs(): Promise<AuditLog[]> {
@@ -391,7 +492,7 @@ export const firestoreService = {
   },
 
   // ================= USERS =================
-  subscribeUsers(onUpdate: (users: UserAccount[]) => void, onError?: (err: any) => void) {
+  subscribeUsers(onUpdate: (users: UserAccount[]) => void, onError?: (err: any) => void): Unsubscribe {
     const colRef = collection(db, 'users');
     return onSnapshot(
       colRef,
@@ -416,7 +517,7 @@ export const firestoreService = {
         onUpdate(list);
       },
       error => {
-        console.warn('Users Firestore snapshot warning:', error);
+        console.warn('[Firestore] Users snapshot warning:', error);
         if (onError) onError(error);
       }
     );
@@ -432,28 +533,42 @@ export const firestoreService = {
       role: (user.role || 'COMMERCIAL').toUpperCase(),
       status: user.status || 'active',
       phone: user.phone || '',
-      email: user.email || `${cleanUser}@drova-crm.internal`,
+      email: user.email || `${cleanUser}@drova-express.dz`,
       password_hash: user.password_hash || '',
       salt: user.salt || '',
       createdAt: user.created_at || new Date().toISOString(),
       lastLogin: user.last_login || null
     });
 
-    const docRef = doc(db, 'users', user.id);
-    await setDoc(docRef, docData, { merge: true });
+    try {
+      const docRef = doc(db, 'users', user.id);
+      await setDoc(docRef, docData, { merge: true });
 
-    // Also mirror to doc by username for O(1) direct lookup without index dependencies
-    if (cleanUser && user.id !== `usr_${cleanUser}`) {
-      await setDoc(doc(db, 'users', `usr_${cleanUser}`), docData, { merge: true }).catch(() => {});
+      if (cleanUser && user.id !== `usr_${cleanUser}`) {
+        await setDoc(doc(db, 'users', `usr_${cleanUser}`), docData, { merge: true });
+      }
+    } catch (error: any) {
+      console.error('[Firestore saveUser Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `حفظ حساب المستخدم "${user.username}"`));
     }
   },
 
   async updateUser(id: string, updates: any): Promise<void> {
     const docRef = doc(db, 'users', id);
-    await updateDoc(docRef, sanitizeForFirestore(updates));
+    try {
+      await setDoc(docRef, sanitizeForFirestore(updates), { merge: true });
+    } catch (error: any) {
+      console.error('[Firestore updateUser Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `تحديث المستخدم (${id})`));
+    }
   },
 
   async deleteUser(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'users', id)).catch(() => {});
+    try {
+      await deleteDoc(doc(db, 'users', id));
+    } catch (error: any) {
+      console.error('[Firestore deleteUser Failed]', error);
+      throw new Error(formatFirestoreErrorMessage(error, `حذف المستخدم (${id})`));
+    }
   }
 };

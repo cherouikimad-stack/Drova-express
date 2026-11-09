@@ -125,7 +125,7 @@ export const CommercialExpediteurWorkspace: React.FC<CommercialExpediteurWorkspa
     setNextFollowupDate('');
   };
 
-  const handleSaveCall = (e: React.FormEvent) => {
+  const handleSaveCall = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!callingExpediteur) return;
 
@@ -142,14 +142,17 @@ export const CommercialExpediteurWorkspace: React.FC<CommercialExpediteurWorkspa
       status_after: commercialStatusAfter,
     });
 
-    storage.updateExpediteur(callingExpediteur.id, {
-      commercial_status: commercialStatusAfter,
-      last_contact_date: new Date().toISOString().split('T')[0],
-      next_followup_date: nextFollowupDate || undefined,
-    });
-
-    setCallingExpediteur(null);
-    onRefresh();
+    try {
+      await storage.updateExpediteur(callingExpediteur.id, {
+        commercial_status: commercialStatusAfter,
+        last_contact_date: new Date().toISOString().split('T')[0],
+        next_followup_date: nextFollowupDate || undefined,
+      });
+      setCallingExpediteur(null);
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.message || 'حدث خطأ أثناء تحديث الشاحن في Firestore');
+    }
   };
 
   const handleToggleSelect = (id: string) => {

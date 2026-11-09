@@ -76,7 +76,7 @@ export const ActivationChecklistModal: React.FC<ActivationChecklistModalProps> =
   const isAllChecklistDone = completedCount >= 10;
   const isManagerOrAdmin = session.role === 'admin' || session.role === 'manager';
 
-  const handleFinalActivation = () => {
+  const handleFinalActivation = async () => {
     if (!isAllChecklistDone) {
       alert('يرجى استكمال بنود القائمة الأساسية أولاً قبل اعتماد التفعيل.');
       return;
@@ -89,16 +89,24 @@ export const ActivationChecklistModal: React.FC<ActivationChecklistModalProps> =
       approved_at: new Date().toISOString(),
     };
 
-    const exp = storage.updateExpediteurChecklist(prospect.id, updatedChecklist, session.name);
-    if (exp) {
-      onActivated(exp);
-      onClose();
+    try {
+      const exp = await storage.updateExpediteurChecklist(prospect.id, updatedChecklist, session.name);
+      if (exp) {
+        onActivated(exp);
+        onClose();
+      }
+    } catch (err: any) {
+      alert(err?.message || 'حدث خطأ أثناء اعتماد تفعيل الشاحن في Firestore');
     }
   };
 
-  const handleSaveProgress = () => {
-    storage.updateExpediteurChecklist(prospect.id, checklist);
-    onClose();
+  const handleSaveProgress = async () => {
+    try {
+      await storage.updateExpediteurChecklist(prospect.id, checklist);
+      onClose();
+    } catch (err: any) {
+      alert(err?.message || 'حدث خطأ أثناء حفظ مرحلة التفعيل في Firestore');
+    }
   };
 
   const checklistItems: { key: keyof ActivationChecklist; label: string; desc: string }[] = [

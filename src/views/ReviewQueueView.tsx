@@ -59,12 +59,16 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
     }
   };
 
-  const handleMarkUnknown = (item: ReviewItem) => {
-    storage.updateProspect(item.prospect.id, {
-      alert: 'بيانات غير مؤكدة (Marked Unknown)',
-      business_location_verification: 'UNVERIFIED',
-    }, 'Marked as unknown by reviewer');
-    refreshItems();
+  const handleMarkUnknown = async (item: ReviewItem) => {
+    try {
+      await storage.updateProspect(item.prospect.id, {
+        alert: 'بيانات غير مؤكدة (Marked Unknown)',
+        business_location_verification: 'UNVERIFIED',
+      }, 'Marked as unknown by reviewer');
+      refreshItems();
+    } catch (err: any) {
+      alert(err?.message || 'فشل تحديث التاجر في Firestore');
+    }
   };
 
   return (
