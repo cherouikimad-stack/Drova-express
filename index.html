@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="ar" dir="rtl" class="dark">
   <head>
+    <script>
+      // Suppress Vite HMR WebSocket proxy disconnect errors in AI Studio iframe environment
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event && event.reason;
+        var msg = (reason && (reason.message || reason.stack)) || '';
+        if (typeof msg === 'string' && (msg.includes('WebSocket') || msg.includes('@vite/client'))) {
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        var msg = (event && (event.message || event.filename)) || '';
+        if (typeof msg === 'string' && (msg.includes('WebSocket') || msg.includes('@vite/client'))) {
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        }
+      });
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/logo.png" />

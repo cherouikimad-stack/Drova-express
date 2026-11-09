@@ -1107,11 +1107,12 @@ export const SettingsView: React.FC<{ initialTab?: string }> = ({ initialTab }) 
               </div>
 
               <div>
-                <label className="text-[#8E8E93] block mb-1">كلمة المرور المشفرة الأولية:</label>
+                <label className="text-[#8E8E93] block mb-1">كلمة المرور للحساب (6 أحرف أو أرقام كحد أدنى):</label>
                 <input
                   type="password"
                   required
-                  placeholder="••••••••"
+                  minLength={6}
+                  placeholder="•••••••• (6 أحرف على الأقل)"
                   value={newUser.password}
                   onChange={e => setNewUser({ ...newUser, password: e.target.value })}
                   className="w-full bg-[#1A1A1A] border border-[#333333] px-3 py-1.5 text-white font-mono"

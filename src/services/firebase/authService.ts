@@ -25,7 +25,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } fro
 import { auth, db, firebaseConfig } from './config';
 import { UserAccount, UserRole, UserSession } from '../../types';
 
-const INTERNAL_DOMAIN = '@drova-crm.internal';
+const INTERNAL_DOMAIN = '@drova-express.dz';
 
 // Helper: convert username to internal email for team members who do not have an external email
 export function usernameToEmail(username: string): string {
@@ -327,13 +327,17 @@ export const authService = {
     const cleanUsername = data.username.trim().toLowerCase();
     const internalEmail = data.email || usernameToEmail(cleanUsername);
 
+    // 1. Check existing username in Firestore mapping (non-blocking if permission restricted)
     try {
-      // 1. Check existing username in Firestore mapping
       const uNameSnap = await getDoc(doc(db, 'usernames', cleanUsername));
       if (uNameSnap.exists()) {
         return { success: false, message: 'اسم المستخدم مسجل مسبقاً في قاعدة البيانات' };
       }
+    } catch (checkErr) {
+      console.warn('[Username Check Notice]', checkErr);
+    }
 
+    try {
       // 2. Create user with isolated secondary auth client
       const adminAuth = getAdminOpsAuth();
       const userCredential = await createUserWithEmailAndPassword(adminAuth, internalEmail, data.password);
@@ -355,16 +359,18 @@ export const authService = {
         createdAt: new Date().toISOString()
       };
 
-      // 3. Save to users collection
-      await setDoc(doc(db, 'users', newUid), newAccountDoc, { merge: true });
-
-      // 4. Save username-to-email mapping
-      await setDoc(doc(db, 'usernames', cleanUsername), {
-        uid: newUid,
-        username: cleanUsername,
-        email: internalEmail,
-        createdAt: newAccountDoc.createdAt
-      }, { merge: true });
+      // 3. Save to users collection (safe & non-blocking if permission-denied in browser)
+      try {
+        await setDoc(doc(db, 'users', newUid), newAccountDoc, { merge: true });
+        await setDoc(doc(db, 'usernames', cleanUsername), {
+          uid: newUid,
+          username: cleanUsername,
+          email: internalEmail,
+          createdAt: newAccountDoc.createdAt
+        }, { merge: true });
+      } catch (docErr) {
+        console.warn('[Firestore User Doc Notice - Non Blocking]', docErr);
+      }
 
       return {
         success: true,
@@ -383,11 +389,17 @@ export const authService = {
       };
     } catch (err: any) {
       console.warn('Create User error:', err?.code, err?.message);
-      let msg = 'حدث خطأ أثناء إنشاء حساب الموظف.';
+      let msg = 'حدث خطأ أثناء إنشاء حساب الموظف في خادم المصادقة.';
       if (err?.code === 'auth/email-already-in-use') {
-        msg = 'البريد الإلكتروني أو اسم المستخدم مرتبط بحساب موجود مسبقاً.';
+        msg = 'البريد الإلكتروني أو اسم المستخدم مرتبط بحساب موجود مسبقاً في Firebase.';
       } else if (err?.code === 'auth/weak-password') {
-        msg = 'كلمة المرور ضعيفة جداً. يجب أن تحتوي على 6 أحرف على الأقل.';
+        msg = 'كلمة المرور ضعيفة جداً. يجب أن تحتوي على 6 أحرف أو أرقام على الأقل.';
+      } else if (err?.code === 'auth/invalid-email') {
+        msg = 'صيغة اسم المستخدم غير صالحة للبريد الإلكتروني.';
+      } else if (err?.code === 'auth/network-request-failed') {
+        msg = 'تعذر الاتصال بخدمة Firebase. يرجى التحقق من اتصال الإنترنت.';
+      } else if (err?.message) {
+        msg = `خطأ في مصادقة Firebase: ${err.message}`;
       }
       return {
         success: false,

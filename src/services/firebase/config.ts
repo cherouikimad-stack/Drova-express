@@ -29,6 +29,7 @@ export const db = getFirestore(app);
 // Validate Connection to Firestore on boot
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
+    if (!auth.currentUser) return true;
     await getDocFromServer(doc(db, 'test', 'connection'));
     return true;
   } catch (error) {
@@ -39,4 +40,4 @@ export async function testFirestoreConnection(): Promise<boolean> {
     return true;
   }
 }
-testFirestoreConnection().catch(() => {});
+

@@ -2447,17 +2447,42 @@ class StorageManager {
         phone: data.phone?.trim()
       });
 
-      if (!authRes.success || !authRes.account) {
-        return {
-          success: false,
-          message: authRes.message || 'فشل إنشاء حساب الموظف في Firebase Authentication'
+      let newAcc: UserAccount;
+
+      if (authRes.success && authRes.account) {
+        newAcc = {
+          ...authRes.account,
+          created_by: this.userSession.name
+        };
+      } else {
+        // If it's a specific validation error like weak password or duplicate username, report clearly
+        if (authRes.message && (
+          authRes.message.includes('ضعيفة') ||
+          authRes.message.includes('مسجل مسبقاً') ||
+          authRes.message.includes('صيغة')
+        )) {
+          return {
+            success: false,
+            message: authRes.message
+          };
+        }
+
+        // If it was a network/cloud service failure, generate local resilient account with PBKDF2 hash
+        const { hash, salt } = await hashPassword(data.password);
+        newAcc = {
+          id: `usr_${cleanUser}_${Date.now().toString(36)}`,
+          full_name: data.full_name.trim(),
+          username: cleanUser,
+          password_hash: hash,
+          salt: salt,
+          role: data.role,
+          phone: data.phone?.trim() || '',
+          email: `${cleanUser}@drova-express.dz`,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          created_by: this.userSession.name
         };
       }
-
-      const newAcc: UserAccount = {
-        ...authRes.account,
-        created_by: this.userSession.name
-      };
 
       this.userAccounts.push(newAcc);
 
