@@ -154,8 +154,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <ShieldCheck size={16} className="text-emerald-400 shrink-0 mt-0.5" />
             <span>
               {currentLang === 'ar'
-                ? 'حسابات موثقة ومحمية بتشفير PBKDF2 الملح (100k rounds). الدخول مراقب ومسجل في سجل التدقيق الإداري.'
-                : 'Comptes sécurisés par hachage salé PBKDF2. Tout accès est consigné dans le journal d\'audit.'}
+                ? 'مصادقة مركزية موحدة عبر Firebase Authentication الرسمية. الدخول مراقب ومسجل في سجل التدقيق الإداري.'
+                : 'Authentification centralisée unifiée via Firebase Authentication officielle. Accès sécurisé et consigné.'}
             </span>
           </div>
 
@@ -171,7 +171,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-white block">
-                {currentLang === 'ar' ? 'اسم المستخدم (Username)' : 'Nom d\'utilisateur'}
+                {currentLang === 'ar' ? 'اسم المستخدم أو البريد الإلكتروني (Username / Email)' : 'Nom d\'utilisateur ou Email'}
               </label>
               <div className="relative">
                 <input
@@ -179,7 +179,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                   required
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder={currentLang === 'ar' ? 'اسم المستخدم' : 'Nom d\'utilisateur'}
+                  placeholder={currentLang === 'ar' ? 'cherouikimad أو cherouikimad@gmail.com' : 'cherouikimad ou email'}
                   className="w-full bg-[#181818] border border-[#333333] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FF0000] transition-colors"
                   dir="ltr"
                 />
@@ -190,7 +190,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-white block">
-                  {currentLang === 'ar' ? 'كلمة المرور المشفرة (Password)' : 'Mot de passe sécurisé'}
+                  {currentLang === 'ar' ? 'كلمة المرور (Password)' : 'Mot de passe'}
                 </label>
               </div>
               <div className="relative">

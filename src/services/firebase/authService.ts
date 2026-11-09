@@ -2,10 +2,12 @@
  * Firebase Authentication & Centralized Multi-PC Identity Service
  * DROVA Express Algeria — Enterprise Merchant CRM
  *
+ * Dedicated strictly to official Firebase Project: drova-express
  * Supports:
- * 1. Enterprise Username + PBKDF2 Password authentication via Central Firestore /users
- * 2. Official Google Workspace OAuth / Firebase Google Sign-In with popup
- * 3. Graceful handling of Firebase Auth provider configuration states
+ * 1. Email / Password authentication via official Firebase Auth
+ * 2. Seamless username-to-email resolution (e.g. cherouikimad -> cherouikimad@gmail.com)
+ * 3. Loading RBAC roles directly from Firestore users/{uid} document
+ * 4. Safe user creation without disrupting the active Administrator session
  */
 import {
   signInWithEmailAndPassword,
@@ -15,21 +17,27 @@ import {
   User as FirebaseUser,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  getAuth
 } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { auth, db } from './config';
+import { auth, db, firebaseConfig } from './config';
 import { UserAccount, UserRole, UserSession } from '../../types';
-import { verifyPassword, hashPassword } from '../auth/crypto';
 
 const INTERNAL_DOMAIN = '@drova-crm.internal';
 
+// Helper: convert username to internal email for team members who do not have an external email
 export function usernameToEmail(username: string): string {
   const clean = username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  if (clean === 'cherouikimad' || clean === 'cherouik') {
+    return 'cherouikimad@gmail.com';
+  }
   return `${clean}${INTERNAL_DOMAIN}`;
 }
 
 export function emailToUsername(email: string): string {
+  if (email.toLowerCase() === 'cherouikimad@gmail.com') return 'cherouikimad';
   return email.replace(INTERNAL_DOMAIN, '').split('@')[0];
 }
 
@@ -40,167 +48,165 @@ export interface AuthResult {
   account?: UserAccount;
 }
 
+// Secondary App instance for admin user provisioning without disconnecting the active session
+function getAdminOpsAuth() {
+  const secondaryApp =
+    getApps().find(a => a.name === 'DrovaAdminOps') ||
+    initializeApp(firebaseConfig, 'DrovaAdminOps');
+  return getAuth(secondaryApp);
+}
+
 export const authService = {
   /**
-   * Log in using enterprise username and password.
-   * Authenticates against centralized Firestore /users collection with salted PBKDF2 hashing,
-   * completely resilient to Firebase Auth provider configuration limits.
+   * Log in using Username or Email + Password via official Firebase Authentication
    */
-  async login(username: string, pass: string): Promise<AuthResult> {
-    const cleanUsername = username.trim().toLowerCase();
-    const isSuperAdmin =
-      cleanUsername === 'cherouik' &&
-      (pass === 'admin123@' || pass === 'cherouik123@');
+  async login(identifier: string, pass: string): Promise<AuthResult> {
+    const rawIdentifier = (identifier || '').trim();
+    if (!rawIdentifier || !pass) {
+      return {
+        success: false,
+        message: 'يرجى إدخال اسم المستخدم أو البريد الإلكتروني وكلمة المرور.'
+      };
+    }
 
-    // 1. Immediate validation for Super Administrator (Zero Latency < 10ms)
-    if (isSuperAdmin) {
+    let targetEmail = '';
+    const cleanIdentifier = rawIdentifier.toLowerCase();
+
+    // 1. Resolve identifier to Email
+    if (cleanIdentifier.includes('@')) {
+      targetEmail = cleanIdentifier;
+    } else if (cleanIdentifier === 'cherouikimad' || cleanIdentifier === 'cherouik') {
+      // Official Super Admin username alias mapping
+      targetEmail = 'cherouikimad@gmail.com';
+    } else {
+      // Look up username in Firestore mapping or query users
+      try {
+        const uNameSnap = await getDoc(doc(db, 'usernames', cleanIdentifier));
+        if (uNameSnap.exists() && uNameSnap.data()?.email) {
+          targetEmail = uNameSnap.data().email;
+        } else {
+          const q = query(collection(db, 'users'), where('username', '==', cleanIdentifier));
+          const qSnap = await getDocs(q);
+          if (!qSnap.empty) {
+            targetEmail = qSnap.docs[0].data()?.email || `${cleanIdentifier}${INTERNAL_DOMAIN}`;
+          } else {
+            targetEmail = `${cleanIdentifier}${INTERNAL_DOMAIN}`;
+          }
+        }
+      } catch {
+        targetEmail = `${cleanIdentifier}${INTERNAL_DOMAIN}`;
+      }
+    }
+
+    // 2. Authenticate directly through Firebase Authentication
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, targetEmail, pass);
+      const fbUser = userCredential.user;
+
+      // 3. Load user document from Firestore (users/{uid})
+      let uData: any = null;
+      try {
+        const userDocSnap = await getDoc(doc(db, 'users', fbUser.uid));
+        if (userDocSnap.exists()) {
+          uData = userDocSnap.data();
+        }
+      } catch (docErr) {
+        console.warn('[Firestore User Profile Notice]', docErr);
+      }
+
+      // Check if this is the official Super Admin
+      const isOfficialSuperAdmin =
+        fbUser.uid === 'aj9amW4NKRR6gS3G4MgyG3fU2sS2' ||
+        targetEmail === 'cherouikimad@gmail.com';
+
+      if (!uData) {
+        // Initialize default user document if missing in Firestore
+        uData = {
+          id: fbUser.uid,
+          email: fbUser.email || targetEmail,
+          fullName: isOfficialSuperAdmin ? 'DROVA Administrator' : (fbUser.displayName || cleanIdentifier),
+          username: isOfficialSuperAdmin ? 'cherouikimad' : cleanIdentifier,
+          role: isOfficialSuperAdmin ? 'SUPER_ADMIN' : 'COMMERCIAL',
+          status: 'active',
+          createdAt: new Date().toISOString()
+        };
+        // Persist non-blocking
+        setDoc(doc(db, 'users', fbUser.uid), uData, { merge: true }).catch(() => {});
+      }
+
+      // Check account status
+      if (uData.status === 'disabled') {
+        await signOut(auth).catch(() => {});
+        return {
+          success: false,
+          message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express.'
+        };
+      }
+
+      // 4. Update lastLogin asynchronously (failure must NEVER block login)
+      updateDoc(doc(db, 'users', fbUser.uid), {
+        lastLogin: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      }).catch(() => {});
+
+      // 5. Construct normalized UserSession
+      const rawRole = (uData.role || (isOfficialSuperAdmin ? 'SUPER_ADMIN' : 'COMMERCIAL')).toString().toLowerCase();
+      const role: UserRole = rawRole as UserRole;
+
       const session: UserSession = {
-        user_id: 'usr_cherouik',
-        name: 'Cherouik Imad',
-        username: 'cherouik',
-        role: 'super_admin',
-        email: 'cherouik.imad@drova-express.dz',
-        phone: '+213550112233'
+        user_id: fbUser.uid,
+        name: uData.fullName || uData.full_name || fbUser.displayName || 'DROVA User',
+        username: uData.username || cleanIdentifier,
+        role,
+        email: fbUser.email || targetEmail,
+        phone: uData.phone || fbUser.phoneNumber || ''
       };
 
       const account: UserAccount = {
-        id: 'usr_cherouik',
-        full_name: 'Cherouik Imad',
-        username: 'cherouik',
+        id: fbUser.uid,
+        full_name: session.name,
+        username: session.username || cleanIdentifier,
         password_hash: '',
         salt: '',
-        role: 'super_admin',
-        phone: '+213550112233',
-        email: 'cherouik.imad@drova-express.dz',
-        status: 'active',
-        created_at: '2026-10-01',
+        role,
+        phone: session.phone,
+        email: session.email,
+        status: (uData.status as any) || 'active',
+        created_at: uData.createdAt || uData.created_at || new Date().toISOString(),
         last_login: new Date().toISOString()
       };
 
-      // Asynchronously update Firestore user doc without blocking login
-      setTimeout(() => {
-        setDoc(doc(db, 'users', 'usr_cherouik'), {
-          id: 'usr_cherouik',
-          username: 'cherouik',
-          fullName: 'Cherouik Imad',
-          role: 'SUPER_ADMIN',
-          status: 'active',
-          phone: '+213550112233',
-          email: 'cherouik.imad@drova-express.dz',
-          lastLogin: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
-      }, 50);
-
-      return { success: true, session, account };
-    }
-
-    // 2. Check Central Firestore /users collection for registered team members
-    try {
-      let targetDoc: any = null;
-
-      // Fast Path: Try direct O(1) document lookup by predictable key 'usr_{cleanUsername}'
-      try {
-        const directSnap = await getDoc(doc(db, 'users', `usr_${cleanUsername}`));
-        if (directSnap.exists()) {
-          targetDoc = directSnap;
-        }
-      } catch (e) {
-        // Continue to query fallback
-      }
-
-      // Query Path: If direct lookup didn't find it, query by username field
-      if (!targetDoc) {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('username', '==', cleanUsername));
-        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-        let snap: any = await Promise.race([getDocs(q), timeoutPromise]);
-
-        if (snap && !snap.empty) {
-          targetDoc = snap.docs[0];
-        } else {
-          // Fallback: search all users in case username had mixed casing
-          try {
-            const allSnap = await getDocs(usersRef);
-            targetDoc = allSnap.docs.find(d => {
-              const u = (d.data().username || '').trim().toLowerCase();
-              return u === cleanUsername;
-            });
-          } catch {}
-        }
-      }
-
-      if (targetDoc) {
-        const uDoc = targetDoc;
-        const uData = uDoc.data();
-
-        if (uData.status === 'disabled') {
-          return {
-            success: false,
-            message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express.'
-          };
-        }
-
-        // Verify salted PBKDF2 hash
-        const isMatch = uData.password_hash && uData.salt
-          ? await verifyPassword(pass, uData.password_hash, uData.salt)
-          : false;
-
-        if (isMatch) {
-          setTimeout(() => {
-            updateDoc(doc(db, 'users', uDoc.id), {
-              lastLogin: new Date().toISOString()
-            }).catch(() => {});
-          }, 50);
-
-          const role = (uData.role || 'commercial').toLowerCase() as UserRole;
-          const session: UserSession = {
-            user_id: uData.id || uDoc.id,
-            name: uData.fullName || uData.full_name || uData.username,
-            username: uData.username,
-            role,
-            email: uData.email || `${cleanUsername}@drova-crm.internal`,
-            phone: uData.phone || ''
-          };
-
-          const account: UserAccount = {
-            id: uData.id || uDoc.id,
-            full_name: session.name,
-            username: uData.username,
-            password_hash: uData.password_hash || '',
-            salt: uData.salt || '',
-            role,
-            phone: uData.phone,
-            email: uData.email || `${cleanUsername}@drova-crm.internal`,
-            status: uData.status || 'active',
-            created_at: uData.createdAt || uData.created_at || new Date().toISOString(),
-            last_login: new Date().toISOString()
-          };
-
-          return { success: true, session, account };
-        } else {
-          return {
-            success: false,
-            message: 'كلمة المرور غير صحيحة، يرجى التحقق والمحاولة مجدداً.'
-          };
-        }
-      }
-
       return {
-        success: false,
-        message: 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم وكلمة المرور.'
+        success: true,
+        session,
+        account
       };
     } catch (err: any) {
-      console.warn('Central database auth query notice:', err);
+      console.warn('[Firebase Auth Login Error]', err?.code, err?.message);
+
+      let arabicMessage = 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم/البريد وكلمة المرور.';
+
+      if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-email') {
+        arabicMessage = 'اسم المستخدم أو البريد الإلكتروني غير مسجل في النظام.';
+      } else if (err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') {
+        arabicMessage = 'كلمة المرور غير صحيحة، يرجى التحقق والمحاولة مجدداً.';
+      } else if (err?.code === 'auth/user-disabled') {
+        arabicMessage = 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express.';
+      } else if (err?.code === 'auth/too-many-requests') {
+        arabicMessage = 'تم حظر المحاولات مؤقتاً بسبب تكرار إدخال كلمة المرور بشكل خاطئ. يرجى المحاولة بعد قليل.';
+      } else if (err?.code === 'auth/network-request-failed') {
+        arabicMessage = 'تعذر الاتصال بخدمة المصادقة السحابية. يرجى التحقق من اتصال الإنترنت.';
+      }
+
       return {
         success: false,
-        message: 'تعذر الاتصال بقاعدة البيانات المركزية. يرجى المحاولة بعد لحظات.'
+        message: arabicMessage
       };
     }
   },
 
   /**
    * Log in using Google Workspace OAuth Single Sign-On
-   * (Natively authorized and provisioned for this Firebase project)
    */
   async loginWithGoogle(): Promise<AuthResult> {
     try {
@@ -210,35 +216,20 @@ export const authService = {
       const fbUser = userCredential.user;
       const email = fbUser.email?.toLowerCase() || '';
 
-      // Check if user is registered in Firestore
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', email));
-      const snap = await getDocs(q);
+      // Check if user document exists in Firestore
+      const userDocSnap = await getDoc(doc(db, 'users', fbUser.uid));
+      let uData: any = userDocSnap.exists() ? userDocSnap.data() : null;
 
-      let uData: any = null;
-      let uid = fbUser.uid;
-      let role: UserRole = 'commercial';
+      const isOfficialSuperAdmin =
+        fbUser.uid === 'aj9amW4NKRR6gS3G4MgyG3fU2sS2' ||
+        email === 'cherouikimad@gmail.com' ||
+        email.includes('cherouik');
 
-      if (!snap.empty) {
-        uData = snap.docs[0].data();
-        role = (uData.role || 'commercial').toLowerCase() as UserRole;
-        if (uData.status === 'disabled') {
-          await signOut(auth);
-          return {
-            success: false,
-            message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express.'
-          };
-        }
-      } else {
-        // Automatically link primary administrator email or seed team member
-        const isOwner =
-          email === 'catalonaimad05@gmail.com' ||
-          email.includes('cherouik') ||
-          email.includes('admin');
+      let role: UserRole = isOfficialSuperAdmin ? 'super_admin' : 'commercial';
 
-        role = isOwner ? 'super_admin' : 'commercial';
+      if (!uData) {
         uData = {
-          id: uid,
+          id: fbUser.uid,
           username: email.split('@')[0],
           fullName: fbUser.displayName || email.split('@')[0],
           full_name: fbUser.displayName || email.split('@')[0],
@@ -249,25 +240,34 @@ export const authService = {
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString()
         };
-        await setDoc(doc(db, 'users', uid), uData, { merge: true }).catch(() => {});
+        await setDoc(doc(db, 'users', fbUser.uid), uData, { merge: true }).catch(() => {});
+      } else {
+        role = (uData.role || (isOfficialSuperAdmin ? 'SUPER_ADMIN' : 'COMMERCIAL')).toLowerCase() as UserRole;
+        if (uData.status === 'disabled') {
+          await signOut(auth);
+          return {
+            success: false,
+            message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express.'
+          };
+        }
       }
 
       const session: UserSession = {
-        user_id: uid,
+        user_id: fbUser.uid,
         name: uData.fullName || uData.full_name || fbUser.displayName || 'DROVA Member',
         username: uData.username || email.split('@')[0],
         role,
         email,
-        phone: uData.phone || fbUser.phoneNumber
+        phone: uData.phone || fbUser.phoneNumber || ''
       };
 
       return {
         success: true,
         session,
         account: {
-          id: uid,
+          id: fbUser.uid,
           full_name: session.name,
-          username: session.username || email.split('@')[0] || 'member',
+          username: session.username || email.split('@')[0],
           password_hash: 'GOOGLE_OAUTH',
           salt: 'GOOGLE_OAUTH',
           role,
@@ -291,7 +291,30 @@ export const authService = {
   },
 
   /**
-   * Create a new authorized team account in Central Firestore & Firebase
+   * Load authorized user profile from Firestore by UID
+   */
+  async loadAuthorizedUser(uid: string): Promise<UserSession | null> {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      const roleStr = (data.role || (uid === 'aj9amW4NKRR6gS3G4MgyG3fU2sS2' ? 'SUPER_ADMIN' : 'COMMERCIAL')).toLowerCase() as UserRole;
+      return {
+        user_id: uid,
+        name: data.fullName || data.full_name || 'DROVA Member',
+        username: data.username || 'member',
+        role: roleStr,
+        email: data.email || '',
+        phone: data.phone || ''
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Create a new authorized team account in Firebase Auth & Firestore
+   * Uses secondary Firebase Auth instance to avoid logging out the current administrator
    */
   async createUser(data: {
     fullName: string;
@@ -305,27 +328,20 @@ export const authService = {
     const internalEmail = data.email || usernameToEmail(cleanUsername);
 
     try {
-      // Check existing username in Firestore
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('username', '==', cleanUsername));
-      const existing = await getDocs(q);
-      if (!existing.empty) {
+      // 1. Check existing username in Firestore mapping
+      const uNameSnap = await getDoc(doc(db, 'usernames', cleanUsername));
+      if (uNameSnap.exists()) {
         return { success: false, message: 'اسم المستخدم مسجل مسبقاً في قاعدة البيانات' };
       }
 
-      // Try creating in Firebase Auth if provider is enabled
-      let newUid = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, internalEmail, data.password);
-        if (userCredential?.user?.uid) {
-          newUid = userCredential.user.uid;
-          await updateProfile(userCredential.user, { displayName: data.fullName }).catch(() => {});
-        }
-      } catch (authErr: any) {
-        console.warn('Firebase Auth user creation notice (saved directly to Firestore users collection):', authErr.code || authErr.message);
-      }
+      // 2. Create user with isolated secondary auth client
+      const adminAuth = getAdminOpsAuth();
+      const userCredential = await createUserWithEmailAndPassword(adminAuth, internalEmail, data.password);
+      const newUid = userCredential.user.uid;
 
-      const { hash, salt } = await hashPassword(data.password);
+      await updateProfile(userCredential.user, { displayName: data.fullName }).catch(() => {});
+      // Immediately sign out from secondary client so it stays clean
+      await signOut(adminAuth).catch(() => {});
 
       const newAccountDoc = {
         id: newUid,
@@ -336,12 +352,19 @@ export const authService = {
         role: data.role.toUpperCase(),
         status: 'active',
         phone: data.phone || '',
-        password_hash: hash,
-        salt,
         createdAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, 'users', newUid), newAccountDoc);
+      // 3. Save to users collection
+      await setDoc(doc(db, 'users', newUid), newAccountDoc, { merge: true });
+
+      // 4. Save username-to-email mapping
+      await setDoc(doc(db, 'usernames', cleanUsername), {
+        uid: newUid,
+        username: cleanUsername,
+        email: internalEmail,
+        createdAt: newAccountDoc.createdAt
+      }, { merge: true });
 
       return {
         success: true,
@@ -349,8 +372,8 @@ export const authService = {
           id: newUid,
           full_name: data.fullName,
           username: cleanUsername,
-          password_hash: hash,
-          salt,
+          password_hash: 'FIREBASE_AUTH',
+          salt: 'FIREBASE_AUTH',
           role: data.role,
           phone: data.phone,
           email: internalEmail,
@@ -359,10 +382,16 @@ export const authService = {
         }
       };
     } catch (err: any) {
-      console.warn('Create User notice:', err?.message || err);
+      console.warn('Create User error:', err?.code, err?.message);
+      let msg = 'حدث خطأ أثناء إنشاء حساب الموظف.';
+      if (err?.code === 'auth/email-already-in-use') {
+        msg = 'البريد الإلكتروني أو اسم المستخدم مرتبط بحساب موجود مسبقاً.';
+      } else if (err?.code === 'auth/weak-password') {
+        msg = 'كلمة المرور ضعيفة جداً. يجب أن تحتوي على 6 أحرف على الأقل.';
+      }
       return {
         success: false,
-        message: err.message || 'حدث خطأ أثناء إنشاء حساب الموظف.'
+        message: msg
       };
     }
   },

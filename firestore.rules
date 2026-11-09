@@ -2,80 +2,136 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- User Accounts ---
-    // Must allow read and write so enterprise username/PBKDF2 login and user creation work across all devices
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.uid == 'aj9amW4NKRR6gS3G4MgyG3fU2sS2' ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'cherouikimad@gmail.com') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'super_admin'])
+      );
+    }
+
+    function isCommercial() {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['COMMERCIAL', 'commercial', 'COMMERCIAL_MANAGER', 'commercial_manager'])
+      );
+    }
+
+    // --- Username-to-Email Mapping for frictionless login ---
+    match /usernames/{username} {
+      // Allow read so login screen can resolve username -> email before authentication
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // --- User Accounts Collection ---
     match /users/{userId} {
-      allow read, write: if true;
+      // All authenticated team members can read users for assignments and audit records
+      allow read: if isAuthenticated();
+      
+      // Super Admin can create/manage any user.
+      // Newly authenticated users can initialize their own profile if not existing.
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId && request.resource.data.role != 'SUPER_ADMIN')
+      );
+
+      // Super Admin can update any user; users can update their own profile EXCEPT role and status
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.status == resource.data.status)
+      );
+
+      // Only Super Admin can delete users
+      allow delete: if isSuperAdmin();
     }
 
     // --- Central Merchants Collection (Master Merchant Database) ---
     match /merchants/{merchantId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
 
-    // --- Phone Uniqueness Lock & Index (Atomic Duplicate Guard) ---
+    // --- Atomic Phone Uniqueness Lock (Duplicate Prevention) ---
     match /merchant_phones/{phoneKey} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // --- Prospects (Synchronized Collection) ---
+    // --- Prospects Collection (Multi-PC Synchronized Pipeline) ---
     match /prospects/{prospectId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
 
-    // --- Call Records ---
+    // --- CRM Calls Records ---
     match /calls/{callId} {
-      allow read, write: if true;
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
 
     // --- Follow-ups ---
     match /followUps/{followUpId} {
-      allow read, write: if true;
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
     match /followups/{followUpId} {
-      allow read, write: if true;
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
     }
 
-    // --- Assignments ---
+    // --- Lead Assignments ---
     match /assignments/{assignmentId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
 
-    // --- Merchant Activities ---
+    // --- Merchant Activities & Logs ---
     match /merchantActivities/{activityId} {
-      allow read, write: if true;
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin();
     }
 
-    // --- Expéditeurs (Shippers) ---
+    // --- Expéditeurs (Active Shippers) ---
     match /expediteurs/{expediteurId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // --- Commercial Feedbacks to Marketing ---
+    // --- Field Commercial Feedback to Marketing ---
     match /commercialFeedbacks/{feedbackId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // --- Real-time Notifications ---
+    // --- Notifications ---
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // --- Immutable Audit Trail ---
+    // --- Immutable Audit Logs ---
     match /auditLogs/{logId} {
-      allow read, create: if true;
-      allow update, delete: if false; // Strict immutability!
+      allow read, create: if isAuthenticated();
+      allow update, delete: if false; // Strict immutability
     }
 
     // --- System Settings ---
     match /settings/{settingId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
     }
 
-    // --- Connectivity check ---
+    // --- Connection test probe ---
     match /test/{testId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
   }
 }
-

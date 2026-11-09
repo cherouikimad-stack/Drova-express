@@ -2323,50 +2323,15 @@ class StorageManager {
     return this.authenticated;
   }
 
-  public async login(username: string, password: string): Promise<{ success: boolean; message?: string; session?: UserSession }> {
-    const cleanUser = username.trim().toLowerCase();
-
-    // 1. Instant check against local team accounts (zero-latency, immediate for accounts created in this browser/admin)
-    const localUser = this.userAccounts.find(u => u.username.toLowerCase() === cleanUser);
-    if (localUser) {
-      if (localUser.status === 'disabled') {
-        return { success: false, message: 'هذا الحساب معطل حالياً من قِبل إدارة DROVA Express' };
-      }
-
-      const valid = await verifyPassword(password, localUser.password_hash, localUser.salt);
-      const isSuperAdminFallback = localUser.username === 'cherouik' && (password === 'admin123@' || password === 'cherouik123@');
-
-      if (valid || isSuperAdminFallback) {
-        localUser.last_login = new Date().toISOString();
-        this.userSession = {
-          user_id: localUser.id,
-          name: localUser.full_name,
-          username: localUser.username,
-          role: localUser.role,
-          email: localUser.email || `${localUser.username}@drova-express.dz`,
-          phone: localUser.phone,
-        };
-        this.authenticated = true;
-        localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(this.userSession));
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `drova_tok_${localUser.id}_${Date.now()}`);
-
-        this.addAuditLog({
-          action: 'User Login',
-          details: `تسجيل دخول ناجح للمستخدم ${localUser.full_name} دور: ${localUser.role}`,
-        });
-
-        // Ensure user document is in central Firestore in background so other devices and PCs receive it
-        firestoreService.saveUser(localUser).catch(() => {});
-
-        this.saveToStorage();
-        this.initFirestoreSync();
-        return { success: true, session: { ...this.userSession } };
-      }
+  public async login(usernameOrEmail: string, password: string): Promise<{ success: boolean; message?: string; session?: UserSession }> {
+    const cleanIdentifier = (usernameOrEmail || '').trim();
+    if (!cleanIdentifier || !password) {
+      return { success: false, message: 'يرجى إدخال اسم المستخدم أو البريد الإلكتروني وكلمة المرور' };
     }
 
-    // 2. Central Firestore login (for accounts created from other PCs or first time on this browser)
     try {
-      const authRes = await authService.login(username, password);
+      // Direct Authentication via official Firebase Authentication
+      const authRes = await authService.login(cleanIdentifier, password);
       if (authRes.success && authRes.session) {
         this.userSession = authRes.session;
         this.authenticated = true;
@@ -2382,7 +2347,7 @@ class StorageManager {
 
         this.addAuditLog({
           action: 'User Login',
-          details: `تسجيل دخول ناجح للمستخدم ${this.userSession.name} دور: ${this.userSession.role}`,
+          details: `تسجيل دخول ناجح للمستخدم ${this.userSession.name} (${this.userSession.username}) دور: ${this.userSession.role}`,
         });
 
         if (this.userSession.role === 'super_admin' && this.prospects.length > 0) {
@@ -2393,23 +2358,17 @@ class StorageManager {
         return { success: true, session: { ...this.userSession } };
       }
 
-      // If remote auth explicitly returned an incorrect password or disabled account, pass that through
-      if (authRes.message && !authRes.message.includes('تعذر الاتصال') && !authRes.message.includes('فشل الاتصال')) {
-        return { success: false, message: authRes.message };
-      }
-    } catch (e) {
-      console.warn('Firebase login attempt fallback to local:', e);
+      return {
+        success: false,
+        message: authRes.message || 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم/البريد وكلمة المرور.'
+      };
+    } catch (err: any) {
+      console.error('[DROVA Auth Failure]', err);
+      return {
+        success: false,
+        message: err?.message || 'تعذر الاتصال بخدمة المصادقة السحابية. يرجى التحقق من الاتصال بالإنترنت.'
+      };
     }
-
-    // 3. Fallback: If local user existed but password check failed above
-    if (localUser) {
-      return { success: false, message: 'كلمة المرور غير صحيحة، يرجى التحقق والمحاولة مجدداً' };
-    }
-
-    return {
-      success: false,
-      message: 'بيانات الدخول غير صحيحة. يرجى التحقق من اسم المستخدم وكلمة المرور.'
-    };
   }
 
   public async loginWithGoogle(): Promise<{ success: boolean; message?: string; session?: UserSession }> {
@@ -2478,59 +2437,65 @@ class StorageManager {
       return { success: false, message: 'الاسم الكامل وكلمة المرور مطلوبان' };
     }
 
-    const { hash, salt } = await hashPassword(data.password);
-    const newAcc: UserAccount = {
-      id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      full_name: data.full_name.trim(),
-      username: cleanUser,
-      password_hash: hash,
-      salt,
-      role: data.role,
-      phone: data.phone?.trim(),
-      email: data.email?.trim() || `${cleanUser}@drova-crm.internal`,
-      status: 'active',
-      created_at: new Date().toISOString(),
-      created_by: this.userSession.name,
-    };
-
-    this.userAccounts.push(newAcc);
-
-    // Keep commercialAccounts in sync
-    if (newAcc.role === 'commercial' || newAcc.role === 'commercial_manager' || newAcc.role === 'sales') {
-      this.commercialAccounts.push({
-        user_id: newAcc.id,
-        display_name: newAcc.full_name,
-        username: newAcc.username,
-        role: newAcc.role,
-        phone: newAcc.phone || '',
-        status: newAcc.status,
-        created_at: newAcc.created_at,
-      });
-    }
-
-    this.addAuditLog({
-      action: 'User Created',
-      details: `إنشاء حساب موظف جديد: ${newAcc.full_name} (${newAcc.username}) دور: ${newAcc.role}`,
-    });
-
-    this.createNotification({
-      recipient_role: 'super_admin',
-      title: 'تم إنشاء حساب موظف جديد',
-      message: `قام ${this.userSession.name} بإنشاء حساب لـ ${newAcc.full_name} بدَوْر (${newAcc.role}).`,
-      type: 'info',
-      link_view: 'settings',
-    });
-
-    this.saveToStorage();
-
-    // Persist to central Firestore users collection for immediate multi-PC access
     try {
-      await firestoreService.saveUser(newAcc);
-    } catch (fsErr) {
-      console.warn('Firestore saveUser notice:', fsErr);
-    }
+      // 1. Create account in Firebase Authentication (using isolated secondary instance)
+      const authRes = await authService.createUser({
+        username: cleanUser,
+        fullName: data.full_name.trim(),
+        password: data.password,
+        role: data.role,
+        phone: data.phone?.trim()
+      });
 
-    return { success: true, account: newAcc };
+      if (!authRes.success || !authRes.account) {
+        return {
+          success: false,
+          message: authRes.message || 'فشل إنشاء حساب الموظف في Firebase Authentication'
+        };
+      }
+
+      const newAcc: UserAccount = {
+        ...authRes.account,
+        created_by: this.userSession.name
+      };
+
+      this.userAccounts.push(newAcc);
+
+      // Keep commercialAccounts in sync
+      if (newAcc.role === 'commercial' || newAcc.role === 'commercial_manager' || newAcc.role === 'sales') {
+        this.commercialAccounts.push({
+          user_id: newAcc.id,
+          display_name: newAcc.full_name,
+          username: newAcc.username,
+          role: newAcc.role,
+          phone: newAcc.phone || '',
+          status: newAcc.status,
+          created_at: newAcc.created_at,
+        });
+      }
+
+      this.addAuditLog({
+        action: 'User Created',
+        details: `إنشاء حساب موظف جديد: ${newAcc.full_name} (${newAcc.username}) دور: ${newAcc.role} على Firebase Auth`,
+      });
+
+      this.createNotification({
+        recipient_role: 'super_admin',
+        title: 'تم إنشاء حساب موظف جديد',
+        message: `قام ${this.userSession.name} بإنشاء حساب لـ ${newAcc.full_name} بدَوْر (${newAcc.role}).`,
+        type: 'info',
+        link_view: 'settings',
+      });
+
+      this.saveToStorage();
+      return { success: true, account: newAcc };
+    } catch (err: any) {
+      console.error('[User Creation Failure]', err);
+      return {
+        success: false,
+        message: err?.message || 'تعذر إنشاء الحساب السحابي. يرجى التحقق من الاتصال بالإنترنت.'
+      };
+    }
   }
 
   public async updateUserAccount(id: string, updates: Partial<UserAccount>): Promise<{ success: boolean; message?: string }> {

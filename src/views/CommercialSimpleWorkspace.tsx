@@ -143,6 +143,24 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
   const activeExpCount = myExpediteurs.filter(e => e.commercial_status === 'نشط' || e.lifecycle_status === 'نشط').length;
   const expediteursToReactivate = reactivationCandidates.length;
 
+  // Daily Goal Targets & Current Progress
+  const DAILY_CALL_TARGET = 20;
+  const DAILY_CONVERSION_TARGET = 3;
+  const callsTodayCount = myCalls.filter(c => {
+    const time = c.date || (c as any).created_at || '';
+    return time.startsWith(todayStr);
+  }).length;
+
+  const conversionsTodayCount = myCalls.filter(c => {
+    const time = c.date || (c as any).created_at || '';
+    if (!time.startsWith(todayStr)) return false;
+    const res = (c.call_result || '').toLowerCase();
+    return res.includes('مهتم') || res.includes('موافقة') || res.includes('اتفاق') || res.includes('interess') || res.includes('valid');
+  }).length;
+
+  const callProgressPct = Math.min(100, Math.round((callsTodayCount / DAILY_CALL_TARGET) * 100));
+  const convProgressPct = Math.min(100, Math.round((conversionsTodayCount / DAILY_CONVERSION_TARGET) * 100));
+
   // Build the Top 20 Prioritized Smart Call Queue
   const buildTop20Queue = (): Prospect[] => {
     const list: Prospect[] = [];
@@ -302,6 +320,128 @@ export const CommercialSimpleWorkspace: React.FC<CommercialSimpleWorkspaceProps>
               <span>تقرير أدائي الكامل</span>
               <ChevronLeft size={14} />
             </button>
+          </div>
+
+          {/* Commercial Daily Goal Widget — Circular Progress Indicators */}
+          <div className="p-5 bg-[#141414] border border-[#262626] shadow-xl relative overflow-hidden">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+              {/* Info & Guidance */}
+              <div className="space-y-2 text-center lg:text-right flex-1">
+                <div className="flex items-center justify-center lg:justify-start gap-2">
+                  <div className="p-1.5 bg-red-950/60 border border-red-800 text-[#FF0000]">
+                    <Target size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white tracking-wide">الهدف التجاري اليومي (Commercial Daily Goal)</h3>
+                    <p className="text-[11px] text-[#A1A1AA]">تتبع فوري لمعدل إنجاز المكالمات وكوتا تحويل التجار لهذا اليوم</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center lg:justify-start gap-3 pt-1">
+                  <span className={`px-2.5 py-1 text-[11px] font-bold border ${
+                    callsTodayCount >= DAILY_CALL_TARGET
+                      ? 'bg-emerald-950/70 border-emerald-700 text-emerald-300'
+                      : callsTodayCount >= 10
+                      ? 'bg-amber-950/70 border-amber-700 text-amber-300'
+                      : 'bg-red-950/60 border-red-900 text-red-300'
+                  }`}>
+                    {callsTodayCount >= DAILY_CALL_TARGET
+                      ? '✓ تم إنجاز هدف المكالمات اليومي بالكامل!'
+                      : `متبقي ${DAILY_CALL_TARGET - callsTodayCount} مكالمة لإتمام هدف اليوم`}
+                  </span>
+
+                  <span className="text-[11px] text-[#71717A] hidden sm:inline">
+                    تاريخ اليوم: {new Date().toLocaleDateString('ar-DZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Circular Indicators */}
+              <div className="flex items-center gap-6 sm:gap-8">
+                {/* 1. Calls Progress Circle */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative w-24 h-24 flex items-center justify-center">
+                    <svg className="w-24 h-24 transform -rotate-90">
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="38"
+                        stroke="#262626"
+                        strokeWidth="7"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="38"
+                        stroke="#FF0000"
+                        strokeWidth="7"
+                        strokeDasharray={238.76}
+                        strokeDashoffset={238.76 - (callProgressPct / 100) * 238.76}
+                        strokeLinecap="round"
+                        fill="transparent"
+                        className="transition-all duration-700 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-lg font-black font-mono text-white leading-none">{callsTodayCount}</span>
+                      <span className="text-[9px] text-[#8E8E93] font-mono mt-0.5">من {DAILY_CALL_TARGET}</span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[11px] font-bold text-white block">مكالمات اليوم</span>
+                    <span className="text-[10px] font-mono text-[#FF0000] font-bold">{callProgressPct}%</span>
+                  </div>
+                </div>
+
+                {/* 2. Conversions Progress Circle */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative w-24 h-24 flex items-center justify-center">
+                    <svg className="w-24 h-24 transform -rotate-90">
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="38"
+                        stroke="#262626"
+                        strokeWidth="7"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="38"
+                        stroke="#10B981"
+                        strokeWidth="7"
+                        strokeDasharray={238.76}
+                        strokeDashoffset={238.76 - (convProgressPct / 100) * 238.76}
+                        strokeLinecap="round"
+                        fill="transparent"
+                        className="transition-all duration-700 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-lg font-black font-mono text-white leading-none">{conversionsTodayCount}</span>
+                      <span className="text-[9px] text-[#8E8E93] font-mono mt-0.5">من {DAILY_CONVERSION_TARGET}</span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[11px] font-bold text-white block">كوتا التحويل</span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">{convProgressPct}%</span>
+                  </div>
+                </div>
+
+                {/* Quick Launch CTA */}
+                {callsTodayCount < DAILY_CALL_TARGET && (
+                  <button
+                    onClick={handleStartQueue}
+                    className="hidden xl:flex flex-col items-center justify-center px-4 py-3 bg-[#FF0000] hover:bg-[#E00000] text-white font-bold text-xs shadow-lg shadow-red-950/40 transition-all cursor-pointer gap-1"
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span>متابعة الاتصالات</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
